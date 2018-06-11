@@ -59,22 +59,27 @@ class LogisticWithOffset():
         if sp.issparse(X):
             X = X.toarray()
 
-        y = y.reshape(-1, 1)
-
-        if not offset:
+        if offset is None:
             offset = np.zeros((X.shape[0], 1))
-        if not sample_weights:
-            sample_weights = np.ones((X.shape[0]))
+        if sample_weights is None:
+            sample_weights = np.ones((X.shape[0], 1))
 
-        if not self.session:
+        if self.session is None:
             self.tf_graph_init(y.shape[1], X.shape[1])
         
         self.session.run(tf.global_variables_initializer())
+        cost = self.session.run(self.cost, feed_dict={self.X: X, self.Offset: offset, self.SampleWeights: sample_weights, self.Y: y})
+        #print(cost)
         for step in range(self._steps):
             self.session.run(self.train, feed_dict={self.X: X,
                                                     self.Offset: offset, 
                                                     self.SampleWeights: sample_weights,
                                                     self.Y: y})
+            
+            cost = self.session.run(self.cost, feed_dict={self.X: X, self.Offset: offset, self.SampleWeights: sample_weights, self.Y: y})
+            #print("Step: {}: {}".format(step, cost))
+            print("Step: {}: {}".format(step, np.max(np.abs(self.session.run(self.offset_index, feed_dict={self.X: X, self.Offset: offset, self.SampleWeights: sample_weights, self.Y: y})))))
+            
         return self
 
     def predict(self, X, offset=None):    

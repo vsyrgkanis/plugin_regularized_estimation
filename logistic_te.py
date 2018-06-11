@@ -39,19 +39,20 @@ def cross_product(X1, X2):
     return (X1.reshape(n,1,-1) * X2.reshape(n,-1,1)).reshape(n,-1) 
 
 def direct_fit(x, t, z, y):
-    model_t = Lasso(alpha=np.sqrt(np.log(x.shape[1])/n_samples))
-    model_t.fit(z, t.ravel())
-
     n_samples = x.shape[0]
+    
+    model_t = Lasso(alpha=np.sqrt(np.log(x.shape[1])/n_samples))
+    model_t.fit(x, t.ravel())
+
     comp_x = np.concatenate((z * t, x), axis=1)
     #model_y = LogisticRegression(penalty='l1', C=np.sqrt(n_samples/np.log(comp_x.shape[1])))
-    steps = 10000
-    lr = 1/np.sqrt(steps)
-    model_y = LogisticWithOffset(alpha_l1=np.sqrt(np.log(comp_x.shape[1])/n_samples), alpha_l2=0.,\
+    steps = 2000
+    lr = 1/np.sqrt(40*steps)
+    model_y = LogisticWithOffset(alpha_l1=np.sqrt(np.log(comp_x.shape[1])/(n_samples)), alpha_l2=0.,\
                                  steps=steps, learning_rate=lr)
-    model_y.fit(comp_x, y)
+    model_y.fit(comp_x, y.reshape(-1, 1))
     
-    return model_y, model_y
+    return model_y, model_t
     
 
 def dml_fit(x, t, z, y, model_t, model_y, model_f):
@@ -63,8 +64,8 @@ def dml_fit(x, t, z, y, model_t, model_y, model_f):
     tr_inds, tst_inds = np.arange(n_samples//2), np.arange(n_samples//2, n_samples)
     model_y, model_t = direct_fit(x[tr_inds], t[tr_inds], z[tr_inds], y[tr_inds])
     
-    theta_prel = model_y.coef_[:,:z.shape[1]].reshape(-1, 1)
-    alpha_prel = model_y.coef_[:,z.shape[1]:].reshape(-1, 1)
+    theta_prel = model_y.coef_.flatten()[:z.shape[1]].reshape(-1, 1)
+    alpha_prel = model_y.coef_.flatten()[z.shape[1]:].reshape(-1, 1)
     t_test_pred = model_t.predict(x[tst_inds]).reshape(-1, 1)
     y_test_pred = model_y.predict(comp_x[tst_inds]).reshape(-1, 1)
     q_test = t_test_pred * np.dot(z[tst_inds], theta_prel) + np.dot(x[tst_inds], alpha_prel)
@@ -73,9 +74,12 @@ def dml_fit(x, t, z, y, model_t, model_y, model_f):
     comp_res_test = z[tst_inds] * res_test
     y_test = y[tst_inds].reshape(-1, 1)
 
+    steps = 10000
+    lr = 1/np.sqrt(steps)
     model_final = LogisticWithOffset(alpha_l1=np.sqrt(np.log(z.shape[1])/n_samples), alpha_l2=0.,\
                                  steps=steps, learning_rate=lr)
     model_final.fit(comp_res_test, y_test, offset=q_test, sample_weights=V_test)
+    print(model_final.coef_.flatten())
     return model_final.coef_
     
 def dml_crossfit(x, t, z, y, model_t, model_y, model_f):
@@ -97,12 +101,12 @@ def dml_crossfit(x, t, z, y, model_t, model_y, model_f):
     return model_f.coef_.flatten(), model_t.coef_.flatten(), model_y.coef_.flatten()
 
 def main():
-    n_samples = 5000 # samples used for estimation
+    n_samples = 10000 # samples used for estimation
     dim_x = 10 # dimension of controls x
     dim_z = 10 # dimension of variables used for heterogeneity (subset of x)
     kappa_x = 5 # support size of control function
     kappa_theta = 2 # support size of target parameter
-    sigma_eta = 1 # variance of error in secondary moment equation
+    sigma_eta = 10 # variance of error in secondary moment equation
     sigma_epsilon = 1 # variance of error in primary moment equation
     lambda_coef = 1 # coeficient in front of the asymptotic rate for regularization lambda
 
@@ -120,6 +124,10 @@ def main():
         true_coef = np.zeros((dim_z,1))
         true_coef[support_theta] = theta
         print(true_coef)
+        
+        t_true_coef = np.zeros((dim_z,1))
+        t_true_coef[support_x] = beta_x
+        print(t_true_coef)
 
         # Direct lasso for all coefficients
         model_y, model_t= direct_fit(x, t, z, y)
@@ -128,7 +136,8 @@ def main():
         l2_direct.append(np.linalg.norm(model_y.coef_.flatten()[:z.shape[1]].flatten() - true_coef.flatten(), ord=2))
         
         print(["{:.2}".format(c) for c in model_y.coef_.flatten()[:z.shape[1]]])
-        
+        print(["{:.2}".format(c) for c in model_t.coef_.flatten()])
+
         # Orthogonal lasso estimation
         ortho_coef = dml_fit(x, t, z, y,\
                                         Lasso(alpha=lambda_coef * np.sqrt(np.log(dim_x)*2. / n_samples)),\
