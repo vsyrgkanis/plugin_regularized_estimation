@@ -183,12 +183,12 @@ if __name__=="__main__":
     
     param_str = '_'.join(['{}_{}'.format(k, v) for k,v in opts.items() if k!='kappa_x'])
 
-    joblib.dump(np.array(l2_direct_list), os.path.join(target_dir, 'logistic_te_l2_direct_with_growing_kappa_x_{}.jbl'.format(param_str)))
-    joblib.dump(np.array(l1_direct_list), os.path.join(target_dir, 'logistic_te_l1_direct_with_growing_kappa_x_{}.jbl'.format(param_str)))
-    joblib.dump(np.array(l2_ortho_list), os.path.join(target_dir, 'logistic_te_l2_ortho_with_growing_kappa_x_{}.jbl'.format(param_str)))
-    joblib.dump(np.array(l1_ortho_list), os.path.join(target_dir, 'logistic_te_l1_ortho_with_growing_kappa_x_{}.jbl'.format(param_str)))
-    joblib.dump(np.array(l2_cross_ortho_list), os.path.join(target_dir, 'logistic_te_l2_cross_ortho_with_growing_kappa_x_{}.jbl'.format(param_str)))
-    joblib.dump(np.array(l1_cross_ortho_list), os.path.join(target_dir, 'logistic_te_l1_cross_ortho_with_growing_kappa_x_{}.jbl'.format(param_str)))
+    joblib.dump(np.array(l2_direct_list), os.path.join(target_dir, 'linear_te_l2_direct_with_growing_kappa_x_{}.jbl'.format(param_str)))
+    joblib.dump(np.array(l1_direct_list), os.path.join(target_dir, 'linear_te_l1_direct_with_growing_kappa_x_{}.jbl'.format(param_str)))
+    joblib.dump(np.array(l2_ortho_list), os.path.join(target_dir, 'linear_te_l2_ortho_with_growing_kappa_x_{}.jbl'.format(param_str)))
+    joblib.dump(np.array(l1_ortho_list), os.path.join(target_dir, 'linear_te_l1_ortho_with_growing_kappa_x_{}.jbl'.format(param_str)))
+    joblib.dump(np.array(l2_cross_ortho_list), os.path.join(target_dir, 'linear_te_l2_cross_ortho_with_growing_kappa_x_{}.jbl'.format(param_str)))
+    joblib.dump(np.array(l1_cross_ortho_list), os.path.join(target_dir, 'linear_te_l1_cross_ortho_with_growing_kappa_x_{}.jbl'.format(param_str)))
     
     plt.figure()
     plt.plot(kappa_grid, np.median(l2_direct_list, axis=1), label='direct')
@@ -199,4 +199,4 @@ if __name__=="__main__":
     plt.fill_between(kappa_grid, np.percentile(l2_cross_ortho_list, 95, axis=1), np.percentile(l2_cross_ortho_list, 5, axis=1), alpha=0.3)
     plt.legend()
     param_str = '_'.join(['{}_{}'.format(k, v) for k,v in opts.items() if k!='kappa_x'])
-    plt.savefig(os.path.join(target_dir, 'l2_errors_with_growing_kappa_x_{}.pdf'.format(param_str)))
+    plt.savefig(os.path.join(target_dir, 'linear_te_l2_errors_with_growing_kappa_x_{}.pdf'.format(param_str)))
