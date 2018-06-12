@@ -8,6 +8,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from logistic_with_offset import LogisticWithOffset
 from joblib import Parallel, delayed
+import joblib
 
 
 def gen_data(n_samples, dim_x, dim_z, kappa_x, kappa_theta, sigma_eta):
@@ -26,8 +27,8 @@ def gen_data(n_samples, dim_x, dim_z, kappa_x, kappa_theta, sigma_eta):
         
     support_x = np.random.choice(np.arange(0, dim_x), kappa_x, replace=False)
     support_theta = np.random.choice(np.arange(0, dim_z), kappa_theta, replace=False)
-    alpha_x = np.random.uniform(1, 1, size=(kappa_x, 1))/kappa_x
-    beta_x = np.random.uniform(1, 1, size=(kappa_x, 1))/kappa_x
+    alpha_x = np.random.uniform(1, 1, size=(kappa_x, 1))
+    beta_x = np.random.uniform(1, 1, size=(kappa_x, 1))
     theta = np.random.uniform(1, 1, size=(kappa_theta, 1))
     t = np.dot(x[:, support_x], beta_x) + np.random.normal(0, sigma_eta, size=(n_samples, 1))
     index_y = np.dot(z[:, support_theta], theta) * t + np.dot(x[:, support_x], alpha_x)
@@ -44,11 +45,11 @@ def direct_fit(x, t, z, y):
     comp_x = np.concatenate((z * t, x), axis=1)
     steps = 10000
     lr = 1/np.sqrt(steps)
-    l1_reg = np.sqrt(np.log(comp_x.shape[1])/(n_samples))/2.
+    l1_reg = np.sqrt(np.log(comp_x.shape[1])/(n_samples))
     #model_y = LogisticWithOffset(alpha_l1=l1_reg, alpha_l2=0.,\
     #                             steps=steps, learning_rate=lr)
     model_y = LogisticRegression(penalty='l1', C=1./l1_reg)
-    model_y.fit(comp_x, y.reshape(-1, 1))
+    model_y.fit(comp_x, y.ravel())
     
     return model_y, model_t
     
@@ -114,10 +115,14 @@ def experiment(exp_id, n_samples, dim_x, dim_z, kappa_x, kappa_theta, sigma_eta,
     
     return l1_direct, l1_ortho, l2_direct, l2_ortho
 
-def main(opts, target_dir='.'):
+def main(opts, target_dir='.', reload_results=True):
     random_seed = 123
 
-    results = Parallel(n_jobs=-1, verbose=1)(
+    results_file = os.path.join(target_dir, 'logistic_te_errors_{}.jbl'.format('_'.join(['{}_{}'.format(k, v) for k,v in opts.items()])))
+    if reload_results and os.path.exists(results_file):
+        results = joblib.load(results_file)
+    else:
+        results = Parallel(n_jobs=-1, verbose=1)(
                 delayed(experiment)(random_seed + exp_id, opts['n_samples'], 
                                                             opts['dim_x'], 
                                                             opts['dim_z'], 
@@ -126,7 +131,9 @@ def main(opts, target_dir='.'):
                                                             opts['sigma_eta'],
                                                             opts['lambda_coef']) 
                 for exp_id in range(opts['n_experiments']))
-    results = np.array(results)
+    results = np.array(results)    
+    joblib.dump(results, results_file)
+    
     l1_direct = results[:, 0]
     l1_ortho = results[:, 1]
     l2_direct = results[:, 2]
@@ -135,11 +142,11 @@ def main(opts, target_dir='.'):
     plt.figure(figsize=(20, 5))
     plt.subplot(1,2,1)
     plt.violinplot([np.array(l2_direct) - np.array(l2_ortho)], showmedians=True)
-    plt.xticks([1,2,3], ['direct - ortho'])
+    plt.xticks([1], ['direct - ortho'])
     plt.title('$\ell_2$ error')
     plt.subplot(1,2,2)
     plt.violinplot([np.array(l1_direct) - np.array(l1_ortho)], showmedians=True)
-    plt.xticks([1,2,3], ['direct - ortho'])
+    plt.xticks([1], ['direct - ortho'])
     plt.title('$\ell_1$ error')
     plt.savefig(os.path.join(target_dir, 'logistic_te_errors_{}.pdf'.format('_'.join(['{}_{}'.format(k, v) for k,v in opts.items()]))))
 
@@ -155,33 +162,41 @@ if __name__=="__main__":
             'sigma_eta': 5, # variance of error in secondary moment equation
             'lambda_coef': 1 # coeficient in front of the asymptotic rate for regularization lambda
     }
+    reload_results = True
+    kappa_grid = np.arange(2, 50, 3)
 
-    target_dir = 'results'
+    target_dir = 'results_larger_lambda_direct'
     if not os.path.exists(target_dir):
         os.makedirs(target_dir)
 
-    kappa_grid = np.arange(2, 50, 3)
     l2_direct_list = []
     l2_ortho_list = []
     l1_direct_list = []
     l1_ortho_list = []
-    
+
     for kappa_x in kappa_grid:
         opts['kappa_x'] = kappa_x
-        l1_direct, l1_ortho, l2_direct, l2_ortho = main(opts, target_dir=target_dir)
+        l1_direct, l1_ortho, l2_direct, l2_ortho = main(opts, target_dir=target_dir, reload_results=reload_results)
         l2_direct_list.append(l2_direct)
         l2_ortho_list.append(l2_ortho)
         l1_direct_list.append(l1_direct)
         l1_ortho_list.append(l1_ortho)
     
-    
+    param_str = '_'.join(['{}_{}'.format(k, v) for k,v in opts.items() if k!='kappa_x'])
+
+    joblib.dump(np.array(l2_direct_list), os.path.join(target_dir, 'logistic_te_l2_direct_with_growing_kappa_x_{}.jbl'.format(param_str)))
+    joblib.dump(np.array(l1_direct_list), os.path.join(target_dir, 'logistic_te_l1_direct_with_growing_kappa_x_{}.jbl'.format(param_str)))
+    joblib.dump(np.array(l2_ortho_list), os.path.join(target_dir, 'logistic_te_l2_ortho_with_growing_kappa_x_{}.jbl'.format(param_str)))
+    joblib.dump(np.array(l1_ortho_list), os.path.join(target_dir, 'logistic_te_l1_ortho_with_growing_kappa_x_{}.jbl'.format(param_str)))
+
     diff2 = np.array(l2_direct_list) - np.array(l2_ortho_list)
     diff1 = np.array(l1_direct_list) - np.array(l1_ortho_list)
     plt.figure()
+    plt.subplot(1, 2, 1)
     plt.plot(kappa_grid, np.median(diff2, axis=1), label='l2_diff')
     plt.fill_between(kappa_grid, np.percentile(diff2, 95, axis=1), np.percentile(diff2, 5, axis=1), alpha=0.3)
+    plt.subplot(1, 2, 2)
     plt.plot(kappa_grid, np.median(diff1, axis=1), label='l1_diff')
     plt.fill_between(kappa_grid, np.percentile(diff1, 95, axis=1), np.percentile(diff1, 5, axis=1), alpha=0.3)
     plt.legend()
-    param_str = '_'.join(['{}_{}'.format(k, v) for k,v in opts.items() if k!='kappa_x'])
     plt.savefig(os.path.join(target_dir, 'logistic_te_l2_errors_with_growing_kappa_x_{}.pdf'.format(param_str)))

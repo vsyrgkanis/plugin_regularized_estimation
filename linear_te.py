@@ -105,10 +105,14 @@ def experiment(exp_id, n_samples, dim_x, dim_z, kappa_x, kappa_theta, sigma_eta,
 
     return l1_direct, l1_ortho, l1_cross_ortho, l2_direct, l2_ortho, l2_cross_ortho
 
-def main(opts, target_dir='.'):
+def main(opts, target_dir='.', reload_results=True):
     random_seed = 123
 
-    results = Parallel(n_jobs=-1, verbose=1)(
+    results_file = os.path.join(target_dir, 'logistic_te_errors_{}.jbl'.format('_'.join(['{}_{}'.format(k, v) for k,v in opts.items()])))
+    if reload_results and os.path.exists(results_file):
+        results = joblib.load(results_file)
+    else:
+        results = Parallel(n_jobs=-1, verbose=1)(
                 delayed(experiment)(random_seed + exp_id, opts['n_samples'], 
                                                             opts['dim_x'], 
                                                             opts['dim_z'], 
@@ -118,7 +122,9 @@ def main(opts, target_dir='.'):
                                                             opts['sigma_epsilon'],
                                                             opts['lambda_coef']) 
                 for exp_id in range(opts['n_experiments']))
-    results = np.array(results)
+    results = np.array(results)    
+    joblib.dump(results, results_file)
+    
     l1_direct = results[:, 0]
     l1_ortho = results[:, 1]
     l1_cross_ortho = results[:, 2]
@@ -159,12 +165,27 @@ if __name__=="__main__":
     l2_direct_list = []
     l2_ortho_list = []
     l2_cross_ortho_list = []
+    l1_direct_list = []
+    l1_ortho_list = []
+    l1_cross_ortho_list = []
     for kappa_x in kappa_grid:
         opts['kappa_x'] = kappa_x
-        _, _, _, l2_direct, l2_ortho, l2_cross_ortho = main(opts, target_dir=target_dir)
+        l1_direct, l1_ortho, l1_cross_ortho, l2_direct, l2_ortho, l2_cross_ortho = main(opts, target_dir=target_dir)
         l2_direct_list.append(l2_direct)
         l2_ortho_list.append(l2_ortho)
         l2_cross_ortho_list.append(l2_cross_ortho)
+        l1_direct_list.append(l1_direct)
+        l1_ortho_list.append(l1_ortho)
+        l1_cross_ortho_list.append(l1_cross_ortho)
+    
+    param_str = '_'.join(['{}_{}'.format(k, v) for k,v in opts.items() if k!='kappa_x'])
+
+    joblib.dump(np.array(l2_direct_list), os.path.join(target_dir, 'logistic_te_l2_direct_with_growing_kappa_x_{}.jbl'.format(param_str)))
+    joblib.dump(np.array(l1_direct_list), os.path.join(target_dir, 'logistic_te_l1_direct_with_growing_kappa_x_{}.jbl'.format(param_str)))
+    joblib.dump(np.array(l2_ortho_list), os.path.join(target_dir, 'logistic_te_l2_ortho_with_growing_kappa_x_{}.jbl'.format(param_str)))
+    joblib.dump(np.array(l1_ortho_list), os.path.join(target_dir, 'logistic_te_l1_ortho_with_growing_kappa_x_{}.jbl'.format(param_str)))
+    joblib.dump(np.array(l2_cross_ortho_list), os.path.join(target_dir, 'logistic_te_l2_cross_ortho_with_growing_kappa_x_{}.jbl'.format(param_str)))
+    joblib.dump(np.array(l1_cross_ortho_list), os.path.join(target_dir, 'logistic_te_l1_cross_ortho_with_growing_kappa_x_{}.jbl'.format(param_str)))
     
     plt.figure()
     plt.plot(kappa_grid, np.median(l2_direct_list, axis=1), label='direct')
