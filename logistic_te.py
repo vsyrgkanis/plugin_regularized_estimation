@@ -17,7 +17,7 @@ def gen_data(n_samples, dim_x, dim_z, kappa_x, kappa_theta, sigma_eta):
     t = <x[support_x], beta_x> + eta
     epsilon ~ Normal(0, sigma_epsilon)
     eta ~ Normal(0, sigma_eta)
-    z = (x[subset_z], 1) for some subset of x of size dim_z - 1
+    z = x[subset_z] for some subset of x of size dim_z
     alpha_x, beta_x, theta are all equal to 1
     support_x, support_theta, subset_z drawn uniformly at random
     """

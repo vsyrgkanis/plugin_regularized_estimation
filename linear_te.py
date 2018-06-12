@@ -14,7 +14,7 @@ def gen_data(n_samples, dim_x, dim_z, kappa_x, kappa_theta, sigma_eta, sigma_eps
     t = <x[support_x], beta_x> + eta
     epsilon ~ Normal(0, sigma_epsilon)
     eta ~ Normal(0, sigma_eta)
-    z = (x[subset_z], 1) for some subset of x of size dim_z - 1
+    z = x[subset_z] for some subset of x of size dim_z
     alpha_x, beta_x, theta are all equal to 1
     support_x, support_theta, subset_z drawn uniformly at random
     """
@@ -87,7 +87,7 @@ def experiment(exp_id, n_samples, dim_x, dim_z, kappa_x, kappa_theta, sigma_eta,
     ols.fit(np.concatenate((z*t, x), axis=1), y.flatten())
     l1_direct = np.linalg.norm(ols.coef_.flatten()[:dim_z] - true_coef.flatten(), ord=1)
     l2_direct = np.linalg.norm(ols.coef_.flatten()[:dim_z] - true_coef.flatten(), ord=2)
-    print("done ols")
+
     # Orthogonal lasso estimation
     ortho_coef, t_coef, y_coef = dml_fit(x, t, z, y,
                                             Lasso(alpha=lambda_coef * np.sqrt(np.log(dim_x)*2. / n_samples)),
@@ -95,7 +95,7 @@ def experiment(exp_id, n_samples, dim_x, dim_z, kappa_x, kappa_theta, sigma_eta,
                                             Lasso(alpha=lambda_coef * np.sqrt(np.log(dim_z)*2. / n_samples), fit_intercept=False))
     l1_ortho = np.linalg.norm(ortho_coef - true_coef.flatten(), ord=1)
     l2_ortho = np.linalg.norm(ortho_coef - true_coef.flatten(), ord=2)
-    print("done ortho")
+
     # Crossfit Orthogonal lasso estimation
     ortho_coef, t_coef, y_coef = dml_crossfit(x, t, z, y,
                                                 Lasso(alpha=lambda_coef * np.sqrt(np.log(dim_x)*2. / n_samples)),
@@ -103,12 +103,12 @@ def experiment(exp_id, n_samples, dim_x, dim_z, kappa_x, kappa_theta, sigma_eta,
                                                 Lasso(alpha=lambda_coef * np.sqrt(np.log(dim_z)*2. / n_samples), fit_intercept=False))
     l1_cross_ortho = np.linalg.norm(ortho_coef - true_coef.flatten(), ord=1)
     l2_cross_ortho = np.linalg.norm(ortho_coef - true_coef.flatten(), ord=2)
-    print("done crossfit ortho")
+
     return l1_direct, l1_ortho, l1_cross_ortho, l2_direct, l2_ortho, l2_cross_ortho
 
 def main(opts, target_dir='.', reload_results=True):
     random_seed = 123
-    print("Running")
+
     results_file = os.path.join(target_dir, 'logistic_te_errors_{}.jbl'.format('_'.join(['{}_{}'.format(k, v) for k,v in opts.items()])))
     if reload_results and os.path.exists(results_file):
         results = joblib.load(results_file)
