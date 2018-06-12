@@ -1,8 +1,7 @@
 import os
 import numpy as np
-from sklearn.model_selection import KFold
 from sklearn.linear_model import LogisticRegression
-from sklearn.linear_model import Lasso, MultiTaskLasso, MultiTaskLassoCV, LinearRegression
+from sklearn.linear_model import Lasso
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -39,15 +38,11 @@ def gen_data(n_samples, dim_x, dim_z, kappa_x, kappa_theta, sigma_eta):
 def direct_fit(x, t, z, y):
     n_samples = x.shape[0]
     
-    model_t = LinearRegression(fit_intercept=False) #Lasso(alpha=np.sqrt(np.log(x.shape[1])/n_samples))
+    model_t = Lasso(alpha=np.sqrt(np.log(x.shape[1])/n_samples))
     model_t.fit(x, t.ravel())
 
     comp_x = np.concatenate((z * t, x), axis=1)
-    steps = 10000
-    lr = 1/np.sqrt(steps)
     l1_reg = np.sqrt(np.log(comp_x.shape[1])/(n_samples))/2.
-    #model_y = LogisticWithOffset(alpha_l1=l1_reg, alpha_l2=0.,\
-    #                             steps=steps, learning_rate=lr)
     model_y = LogisticRegression(penalty='l1', C=1./l1_reg)
     model_y.fit(comp_x, y.ravel())
     
@@ -110,8 +105,8 @@ def experiment(exp_id, n_samples, dim_x, dim_z, kappa_x, kappa_theta, sigma_eta,
     
     # Orthogonal lasso estimation
     ortho_coef = dml_fit(x, t, z, y)
-    l1_ortho = np.linalg.norm(ortho_coef - true_coef.flatten(), ord=1)
-    l2_ortho = np.linalg.norm(ortho_coef - true_coef.flatten(), ord=2)
+    l1_ortho = np.linalg.norm(ortho_coef.flatten() - true_coef.flatten(), ord=1)
+    l2_ortho = np.linalg.norm(ortho_coef.flatten() - true_coef.flatten(), ord=2)
     
     return l1_direct, l1_ortho, l2_direct, l2_ortho
 
@@ -167,10 +162,10 @@ if __name__=="__main__":
             'sigma_eta': 5, # variance of error in secondary moment equation
             'lambda_coef': 1 # coeficient in front of the asymptotic rate for regularization lambda
     }
-    reload_results = True
-    kappa_grid = np.arange(2, 50, 3)
+    reload_results = False
+    kappa_grid = np.arange(2, 40, 3)
+    target_dir = 'results_logistic_te'
 
-    target_dir = 'results_unnormalized_coefs'
     if not os.path.exists(target_dir):
         os.makedirs(target_dir)
 

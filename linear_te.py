@@ -162,14 +162,13 @@ if __name__=="__main__":
             'sigma_epsilon': 1, # variance of error in primary moment equation
             'lambda_coef': 1 # coeficient in front of the asymptotic rate for regularization lambda
     }
-
-    target_dir = 'results_corrected'
-    reload_results = True
+    reload_results = False
+    kappa_grid = np.arange(2, 40, 3)
+    target_dir = 'results_linear_te'
 
     if not os.path.exists(target_dir):
         os.makedirs(target_dir)
 
-    kappa_grid = np.arange(2, 40, 3)
     l2_direct_list = []
     l2_ortho_list = []
     l2_cross_ortho_list = []
@@ -203,7 +202,6 @@ if __name__=="__main__":
     plt.plot(kappa_grid, np.median(l2_cross_ortho_list, axis=1), label='cross_ortho')
     plt.fill_between(kappa_grid, np.percentile(l2_cross_ortho_list, 95, axis=1), np.percentile(l2_cross_ortho_list, 5, axis=1), alpha=0.3)
     plt.legend()
-    #plt.title('$\ell_2$ error')
     plt.xlabel('support size $k_g$')
     plt.ylabel('$\ell_2$ error')
     plt.tight_layout()
