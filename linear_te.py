@@ -1,3 +1,4 @@
+import os
 import numpy as np
 from sklearn.model_selection import KFold
 from sklearn.linear_model import Lasso, MultiTaskLasso, MultiTaskLassoCV, LinearRegression
@@ -104,21 +105,19 @@ def experiment(exp_id, n_samples, dim_x, dim_z, kappa_x, kappa_theta, sigma_eta,
 
     return l1_direct, l1_ortho, l1_cross_ortho, l2_direct, l2_ortho, l2_cross_ortho
 
-def main():
+def main(opts, target_dir='.'):
     random_seed = 123
-    n_experiments = 1000 # number of monte carlo experiments
-    n_samples = 2000 # samples used for estimation
-    dim_x = 200 # dimension of controls x
-    dim_z = 200 # dimension of variables used for heterogeneity (subset of x)
-    kappa_x = 5 # support size of control function
-    kappa_theta = 2 # support size of target parameter
-    sigma_eta = 1 # variance of error in secondary moment equation
-    sigma_epsilon = 1 # variance of error in primary moment equation
-    lambda_coef = 1 # coeficient in front of the asymptotic rate for regularization lambda
 
     results = Parallel(n_jobs=-1, verbose=1)(
-                delayed(experiment)(random_seed + exp_id, n_samples, dim_x, dim_z, kappa_x, kappa_theta, sigma_eta, sigma_epsilon, lambda_coef) 
-                for exp_id in range(n_experiments))
+                delayed(experiment)(random_seed + exp_id, opts['n_samples'], 
+                                                            opts['dim_x'], 
+                                                            opts['dim_z'], 
+                                                            opts['kappa_x'],
+                                                            opts['kappa_theta'],
+                                                            opts['sigma_eta'],
+                                                            opts['sigma_epsilon'],
+                                                            opts['lambda_coef']) 
+                for exp_id in range(opts['n_experiments']))
     results = np.array(results)
     l1_direct = results[:, 0]
     l1_ortho = results[:, 1]
@@ -127,7 +126,6 @@ def main():
     l2_ortho = results[:, 4]
     l2_cross_ortho = results[:, 5]
     
-
     plt.figure(figsize=(20, 5))
     plt.subplot(1,2,1)
     plt.violinplot([np.array(l2_direct), np.array(l2_ortho), np.array(l2_cross_ortho)], showmedians=True)
@@ -137,8 +135,44 @@ def main():
     plt.violinplot([np.array(l1_direct), np.array(l1_ortho), np.array(l1_cross_ortho)], showmedians=True)
     plt.xticks([1,2,3], ['direct', 'ortho', 'crossfit_ortho'])
     plt.title('$\ell_1$ error')
-    plt.savefig('linear_te_errors.pdf')
+    plt.savefig(os.path.join(target_dir, 'linear_te_errors_{}.pdf'.format('_'.join(['{}_{}'.format(k, v) for k,v in opts.items()]))))
+
+    return l1_direct, l1_ortho, l1_cross_ortho, l2_direct, l2_ortho, l2_cross_ortho
 
 if __name__=="__main__":
-    main()
+    
+    opts= {'n_experiments': 100, # number of monte carlo experiments
+            'n_samples': 5000, # samples used for estimation
+            'dim_x': 200, # dimension of controls x
+            'dim_z': 200, # dimension of variables used for heterogeneity (subset of x)
+            'kappa_theta': 2, # support size of target parameter
+            'sigma_eta': 1, # variance of error in secondary moment equation
+            'sigma_epsilon': 1, # variance of error in primary moment equation
+            'lambda_coef': 1 # coeficient in front of the asymptotic rate for regularization lambda
+    }
 
+    target_dir = 'results'
+    if not os.path.exists(target_dir):
+        os.makedirs(target_dir)
+
+    kappa_grid = np.arange(2, 40, 3)
+    l2_direct_list = []
+    l2_ortho_list = []
+    l2_cross_ortho_list = []
+    for kappa_x in kappa_grid:
+        opts['kappa_x'] = kappa_x
+        _, _, _, l2_direct, l2_ortho, l2_cross_ortho = main(opts, target_dir=target_dir)
+        l2_direct_list.append(l2_direct)
+        l2_ortho_list.append(l2_ortho)
+        l2_cross_ortho_list.append(l2_cross_ortho)
+    
+    plt.figure()
+    plt.plot(kappa_grid, np.median(l2_direct_list, axis=1), label='direct')
+    plt.fill_between(kappa_grid, np.percentile(l2_direct_list, 95, axis=1), np.percentile(l2_direct_list, 5, axis=1), alpha=0.3)
+    plt.plot(kappa_grid, np.median(l2_ortho_list, axis=1), label='ortho')
+    plt.fill_between(kappa_grid, np.percentile(l2_ortho_list, 95, axis=1), np.percentile(l2_ortho_list, 5, axis=1), alpha=0.3)
+    plt.plot(kappa_grid, np.median(l2_cross_ortho_list, axis=1), label='cross_ortho')
+    plt.fill_between(kappa_grid, np.percentile(l2_cross_ortho_list, 95, axis=1), np.percentile(l2_cross_ortho_list, 5, axis=1), alpha=0.3)
+    plt.legend()
+    param_str = '_'.join(['{}_{}'.format(k, v) for k,v in opts.items() if k!='kappa_x'])
+    plt.savefig(os.path.join(target_dir, 'l2_errors_with_growing_kappa_x_{}.pdf'.format(param_str)))
