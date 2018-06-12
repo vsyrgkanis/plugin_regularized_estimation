@@ -45,7 +45,7 @@ def direct_fit(x, t, z, y):
     comp_x = np.concatenate((z * t, x), axis=1)
     steps = 10000
     lr = 1/np.sqrt(steps)
-    l1_reg = np.sqrt(np.log(comp_x.shape[1])/(n_samples))
+    l1_reg = np.sqrt(np.log(comp_x.shape[1])/(n_samples))/2.
     #model_y = LogisticWithOffset(alpha_l1=l1_reg, alpha_l2=0.,\
     #                             steps=steps, learning_rate=lr)
     model_y = LogisticRegression(penalty='l1', C=1./l1_reg)
@@ -165,7 +165,7 @@ if __name__=="__main__":
     reload_results = True
     kappa_grid = np.arange(2, 50, 3)
 
-    target_dir = 'results_larger_lambda_direct'
+    target_dir = 'results_unnormalized_coefs'
     if not os.path.exists(target_dir):
         os.makedirs(target_dir)
 
