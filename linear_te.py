@@ -87,7 +87,7 @@ def experiment(exp_id, n_samples, dim_x, dim_z, kappa_x, kappa_theta, sigma_eta,
     ols.fit(np.concatenate((z*t, x), axis=1), y.flatten())
     l1_direct = np.linalg.norm(ols.coef_.flatten()[:dim_z] - true_coef.flatten(), ord=1)
     l2_direct = np.linalg.norm(ols.coef_.flatten()[:dim_z] - true_coef.flatten(), ord=2)
-    
+    print("done ols")
     # Orthogonal lasso estimation
     ortho_coef, t_coef, y_coef = dml_fit(x, t, z, y,
                                             Lasso(alpha=lambda_coef * np.sqrt(np.log(dim_x)*2. / n_samples)),
@@ -95,7 +95,7 @@ def experiment(exp_id, n_samples, dim_x, dim_z, kappa_x, kappa_theta, sigma_eta,
                                             Lasso(alpha=lambda_coef * np.sqrt(np.log(dim_z)*2. / n_samples), fit_intercept=False))
     l1_ortho = np.linalg.norm(ortho_coef - true_coef.flatten(), ord=1)
     l2_ortho = np.linalg.norm(ortho_coef - true_coef.flatten(), ord=2)
-    
+    print("done ortho")
     # Crossfit Orthogonal lasso estimation
     ortho_coef, t_coef, y_coef = dml_crossfit(x, t, z, y,
                                                 Lasso(alpha=lambda_coef * np.sqrt(np.log(dim_x)*2. / n_samples)),
@@ -103,7 +103,7 @@ def experiment(exp_id, n_samples, dim_x, dim_z, kappa_x, kappa_theta, sigma_eta,
                                                 Lasso(alpha=lambda_coef * np.sqrt(np.log(dim_z)*2. / n_samples), fit_intercept=False))
     l1_cross_ortho = np.linalg.norm(ortho_coef - true_coef.flatten(), ord=1)
     l2_cross_ortho = np.linalg.norm(ortho_coef - true_coef.flatten(), ord=2)
-
+    print("done crossfit ortho")
     return l1_direct, l1_ortho, l1_cross_ortho, l2_direct, l2_ortho, l2_cross_ortho
 
 def main(opts, target_dir='.', reload_results=True):
@@ -133,16 +133,21 @@ def main(opts, target_dir='.', reload_results=True):
     l2_ortho = results[:, 4]
     l2_cross_ortho = results[:, 5]
     
-    plt.figure(figsize=(20, 5))
-    plt.subplot(1,2,1)
-    plt.violinplot([np.array(l2_direct), np.array(l2_ortho), np.array(l2_cross_ortho)], showmedians=True)
-    plt.xticks([1,2,3], ['direct', 'ortho', 'crossfit_ortho'])
-    plt.title('$\ell_2$ error')
-    plt.subplot(1,2,2)
-    plt.violinplot([np.array(l1_direct), np.array(l1_ortho), np.array(l1_cross_ortho)], showmedians=True)
-    plt.xticks([1,2,3], ['direct', 'ortho', 'crossfit_ortho'])
-    plt.title('$\ell_1$ error')
-    plt.savefig(os.path.join(target_dir, 'linear_te_errors_{}.pdf'.format('_'.join(['{}_{}'.format(k, v) for k,v in opts.items()]))))
+    plt.figure(figsize=(5, 3))
+    plt.violinplot([np.array(l2_direct) - np.array(l2_ortho), np.array(l2_direct) - np.array(l2_cross_ortho)], showmedians=True)
+    plt.xticks([1,2], ['direct - ortho', 'direct - crossfit_ortho'])
+    plt.ylabel('$\ell_2$ error decrease')
+    plt.tight_layout()
+    plt.savefig(os.path.join(target_dir, 'linear_te_l2_errors_{}.pdf'.format('_'.join(['{}_{}'.format(k, v) for k,v in opts.items()]))))
+    plt.close()
+
+    plt.figure(figsize=(5, 3))
+    plt.violinplot([np.array(l1_direct) - np.array(l1_ortho), np.array(l1_direct) - np.array(l1_cross_ortho)], showmedians=True)
+    plt.xticks([1,2], ['direct - ortho', 'direct - crossfit_ortho'])
+    plt.ylabel('$\ell_1$ error decrease')
+    plt.tight_layout()
+    plt.savefig(os.path.join(target_dir, 'linear_te_l1_errors_{}.pdf'.format('_'.join(['{}_{}'.format(k, v) for k,v in opts.items()]))))
+    plt.close()
 
     return l1_direct, l1_ortho, l1_cross_ortho, l2_direct, l2_ortho, l2_cross_ortho
 
@@ -158,8 +163,8 @@ if __name__=="__main__":
             'lambda_coef': 1 # coeficient in front of the asymptotic rate for regularization lambda
     }
 
-    target_dir = 'results'
-    reload_results = False
+    target_dir = 'results_corrected'
+    reload_results = True
 
     if not os.path.exists(target_dir):
         os.makedirs(target_dir)
@@ -190,7 +195,7 @@ if __name__=="__main__":
     joblib.dump(np.array(l2_cross_ortho_list), os.path.join(target_dir, 'linear_te_l2_cross_ortho_with_growing_kappa_x_{}.jbl'.format(param_str)))
     joblib.dump(np.array(l1_cross_ortho_list), os.path.join(target_dir, 'linear_te_l1_cross_ortho_with_growing_kappa_x_{}.jbl'.format(param_str)))
     
-    plt.figure()
+    plt.figure(figsize=(5, 3))
     plt.plot(kappa_grid, np.median(l2_direct_list, axis=1), label='direct')
     plt.fill_between(kappa_grid, np.percentile(l2_direct_list, 95, axis=1), np.percentile(l2_direct_list, 5, axis=1), alpha=0.3)
     plt.plot(kappa_grid, np.median(l2_ortho_list, axis=1), label='ortho')
@@ -198,5 +203,9 @@ if __name__=="__main__":
     plt.plot(kappa_grid, np.median(l2_cross_ortho_list, axis=1), label='cross_ortho')
     plt.fill_between(kappa_grid, np.percentile(l2_cross_ortho_list, 95, axis=1), np.percentile(l2_cross_ortho_list, 5, axis=1), alpha=0.3)
     plt.legend()
+    #plt.title('$\ell_2$ error')
+    plt.xlabel('support size $k_g$')
+    plt.ylabel('$\ell_2$ error')
+    plt.tight_layout()
     param_str = '_'.join(['{}_{}'.format(k, v) for k,v in opts.items() if k!='kappa_x'])
-    plt.savefig(os.path.join(target_dir, 'linear_te_l2_errors_with_growing_kappa_x_{}.pdf'.format(param_str)))
+    plt.savefig(os.path.join(target_dir, 'linear_te_growing_kappa_x_{}.pdf'.format(param_str)))

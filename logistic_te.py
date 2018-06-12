@@ -139,16 +139,21 @@ def main(opts, target_dir='.', reload_results=True):
     l2_direct = results[:, 2]
     l2_ortho = results[:, 3]
     
-    plt.figure(figsize=(20, 5))
-    plt.subplot(1,2,1)
+    plt.figure(figsize=(5, 3))
     plt.violinplot([np.array(l2_direct) - np.array(l2_ortho)], showmedians=True)
     plt.xticks([1], ['direct - ortho'])
-    plt.title('$\ell_2$ error')
-    plt.subplot(1,2,2)
+    plt.ylabel('$\ell_2$ error decrease')
+    plt.tight_layout()
+    plt.savefig(os.path.join(target_dir, 'logistic_te_l2_errors_{}.pdf'.format('_'.join(['{}_{}'.format(k, v) for k,v in opts.items()]))))
+    plt.close()
+
+    plt.figure(figsize=(5, 3))
     plt.violinplot([np.array(l1_direct) - np.array(l1_ortho)], showmedians=True)
     plt.xticks([1], ['direct - ortho'])
-    plt.title('$\ell_1$ error')
-    plt.savefig(os.path.join(target_dir, 'logistic_te_errors_{}.pdf'.format('_'.join(['{}_{}'.format(k, v) for k,v in opts.items()]))))
+    plt.ylabel('$\ell_1$ error decrease')
+    plt.tight_layout()
+    plt.savefig(os.path.join(target_dir, 'logistic_te_l1_errors_{}.pdf'.format('_'.join(['{}_{}'.format(k, v) for k,v in opts.items()]))))
+    plt.close()
 
     return l1_direct, l1_ortho, l2_direct, l2_ortho
 
@@ -191,7 +196,7 @@ if __name__=="__main__":
 
     diff2 = np.array(l2_direct_list) - np.array(l2_ortho_list)
     diff1 = np.array(l1_direct_list) - np.array(l1_ortho_list)
-    plt.figure()
+    plt.figure(figsize=(7, 5))
     plt.subplot(1, 2, 1)
     plt.plot(kappa_grid, np.median(diff2, axis=1), label='l2_diff')
     plt.fill_between(kappa_grid, np.percentile(diff2, 95, axis=1), np.percentile(diff2, 5, axis=1), alpha=0.3)
