@@ -6,6 +6,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from joblib import Parallel, delayed
+import joblib
 
 def gen_data(n_samples, dim_x, dim_z, kappa_x, kappa_theta, sigma_eta, sigma_epsilon):
     """ Generate data from:
@@ -107,7 +108,7 @@ def experiment(exp_id, n_samples, dim_x, dim_z, kappa_x, kappa_theta, sigma_eta,
 
 def main(opts, target_dir='.', reload_results=True):
     random_seed = 123
-
+    print("Running")
     results_file = os.path.join(target_dir, 'logistic_te_errors_{}.jbl'.format('_'.join(['{}_{}'.format(k, v) for k,v in opts.items()])))
     if reload_results and os.path.exists(results_file):
         results = joblib.load(results_file)
@@ -158,6 +159,8 @@ if __name__=="__main__":
     }
 
     target_dir = 'results'
+    reload_results = False
+
     if not os.path.exists(target_dir):
         os.makedirs(target_dir)
 
@@ -170,7 +173,7 @@ if __name__=="__main__":
     l1_cross_ortho_list = []
     for kappa_x in kappa_grid:
         opts['kappa_x'] = kappa_x
-        l1_direct, l1_ortho, l1_cross_ortho, l2_direct, l2_ortho, l2_cross_ortho = main(opts, target_dir=target_dir)
+        l1_direct, l1_ortho, l1_cross_ortho, l2_direct, l2_ortho, l2_cross_ortho = main(opts, target_dir=target_dir, reload_results=reload_results)
         l2_direct_list.append(l2_direct)
         l2_ortho_list.append(l2_ortho)
         l2_cross_ortho_list.append(l2_cross_ortho)
