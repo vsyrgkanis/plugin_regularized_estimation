@@ -10,4 +10,4 @@ Code associated with paper: <i>Plug-in Regularized Estimation of High-Dimensiona
 
 * The jupyter notebooks `linear_te.ipynb` and `logistic_te.ipynb` contain example calls to library functions contained in the scripts above.
 
-* The file `logistic_with_offset.py` contains a class that corresponds to a tensorflow based implementation of the weighted logistic regression with index offsets and $\ell_1$ and $\ell_2$ regularization, required in the final stage of the orthogonal estimation of treatment effect models with a logistic link.
+* The file `logistic_with_offset.py` contains a class that corresponds to a tensorflow based implementation of the weighted logistic regression with index offsets and `l1` and `l2` regularization, required in the final stage of the orthogonal estimation of treatment effect models with a logistic link.
