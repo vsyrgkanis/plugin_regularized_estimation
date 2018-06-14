@@ -1,5 +1,6 @@
 import os
 import numpy as np
+from sklearn.model_selection import KFold
 from sklearn.linear_model import LogisticRegression
 from sklearn.linear_model import Lasso
 import matplotlib
@@ -42,20 +43,17 @@ def direct_fit(x, t, z, y):
     model_t.fit(x, t.ravel())
 
     comp_x = np.concatenate((z * t, x), axis=1)
-    l1_reg = np.sqrt(np.log(comp_x.shape[1])/(n_samples))/2.
+    l1_reg = np.sqrt(np.log(comp_x.shape[1])/(4*n_samples))
     model_y = LogisticRegression(penalty='l1', C=1./l1_reg)
     model_y.fit(comp_x, y.ravel())
     
     return model_y, model_t
     
 
-def dml_fit(x, t, z, y):
-    """ Orthogonal estimation of coefficient theta
-    """
+def first_stage_estimates(x, t, z, y, tr_inds, tst_inds):
     n_samples = x.shape[0]
     comp_x = np.concatenate((z * t, x), axis=1)
     
-    tr_inds, tst_inds = np.arange(n_samples//2), np.arange(n_samples//2, n_samples)
     model_y, model_t = direct_fit(x[tr_inds], t[tr_inds], z[tr_inds], y[tr_inds])
     
     # \tilde{theta}
@@ -71,21 +69,53 @@ def dml_fit(x, t, z, y):
     # \hat{q}(u) = \pi(u) * B(u)'\tilde{theta} + u'\tilde{alpha}
     q_test = t_test_pred * np.dot(z[tst_inds], theta_prel) + np.dot(x[tst_inds], alpha_prel)
     # V(z) = G(index) * (1 - G(index))
-    V_test = y_test_pred * (1 - y_test_pred)
-    sample_weights = (1./np.clip(V_test, 0.0001, 1))/np.mean((1./np.clip(V_test, 0.0001, 1)))
+    V_test = y_test_pred * (1 - y_test_pred)    
     # res = x - \hat{h}(u) = B(u)*(tau - pi(u))
     res_test = t[tst_inds] - t_test_pred
     comp_res_test = z[tst_inds] * res_test
-    y_test = y[tst_inds].reshape(-1, 1)
+
+    return comp_res_test, q_test, V_test
+
+def dml_fit(x, t, z, y):
+    """ Orthogonal estimation of coefficient theta
+    """
+    n_samples = x.shape[0]
+    tr_inds, tst_inds = np.arange(n_samples//2), np.arange(n_samples//2, n_samples)
+    comp_res_test, q_test, V_test = first_stage_estimates(x, t, z, y, tr_inds, tst_inds)
+    sample_weights_test = (1./np.clip(V_test, 0.0001, 1))/np.mean((1./np.clip(V_test, 0.0001, 1)))
 
     steps = 10000
     lr = 1/np.sqrt(steps)
-    l1_reg = np.sqrt(np.log(z.shape[1])/n_samples)/2.
+    l1_reg = np.sqrt(np.log(z.shape[1])/(4*tst_inds.shape[0]))
     model_final = LogisticWithOffset(alpha_l1=l1_reg, alpha_l2=0.,\
                                  steps=steps, learning_rate=lr, tol=1e-7)
     
-    model_final.fit(comp_res_test, y_test, offset=q_test, sample_weights=sample_weights)
+    model_final.fit(comp_res_test, y[tst_inds], offset=q_test, sample_weights=sample_weights_test)
     
+    return model_final.coef_.flatten()
+
+
+def dml_crossfit(x, t, z, y):
+    """ Orthogonal estimation of coefficient theta with cross-fitting
+    """
+    n_samples = x.shape[0]
+    
+    kf = KFold(n_splits=4)
+    comp_res = np.zeros(z.shape)
+    offset = np.zeros((x.shape[0], 1))
+    V = np.zeros((x.shape[0], 1))
+    for train_index, test_index in kf.split(x):
+        comp_res[test_index], offset[test_index], V[test_index] = first_stage_estimates(x, t, z, y, train_index, test_index)
+    
+    sample_weights = (1./np.clip(V, 0.0001, 1))/np.mean((1./np.clip(V, 0.0001, 1)))
+
+    steps = 10000
+    lr = 1/np.sqrt(steps)
+    l1_reg = np.sqrt(np.log(z.shape[1])/(4*n_samples))
+    model_final = LogisticWithOffset(alpha_l1=l1_reg, alpha_l2=0.,\
+                                 steps=steps, learning_rate=lr, tol=1e-7)
+
+    model_final.fit(comp_res, y, offset=offset, sample_weights=sample_weights)
     return model_final.coef_.flatten()
 
 
@@ -107,8 +137,12 @@ def experiment(exp_id, n_samples, dim_x, dim_z, kappa_x, kappa_theta, sigma_eta,
     ortho_coef = dml_fit(x, t, z, y)
     l1_ortho = np.linalg.norm(ortho_coef.flatten() - true_coef.flatten(), ord=1)
     l2_ortho = np.linalg.norm(ortho_coef.flatten() - true_coef.flatten(), ord=2)
-    
-    return l1_direct, l1_ortho, l2_direct, l2_ortho
+
+    ortho_coef = dml_crossfit(x, t, z, y)
+    l1_cross_ortho = np.linalg.norm(ortho_coef - true_coef.flatten(), ord=1)
+    l2_cross_ortho = np.linalg.norm(ortho_coef - true_coef.flatten(), ord=2)
+
+    return l1_direct, l1_ortho, l1_cross_ortho, l2_direct, l2_ortho, l2_cross_ortho
 
 def main(opts, target_dir='.', reload_results=True):
     random_seed = 123
@@ -131,26 +165,28 @@ def main(opts, target_dir='.', reload_results=True):
     
     l1_direct = results[:, 0]
     l1_ortho = results[:, 1]
-    l2_direct = results[:, 2]
-    l2_ortho = results[:, 3]
+    l1_cross_ortho = results[:, 2]
+    l2_direct = results[:, 3]
+    l2_ortho = results[:, 4]
+    l2_cross_ortho = results[:, 5]
     
     plt.figure(figsize=(5, 3))
-    plt.violinplot([np.array(l2_direct) - np.array(l2_ortho)], showmedians=True)
-    plt.xticks([1], ['direct - ortho'])
+    plt.violinplot([np.array(l2_direct) - np.array(l2_ortho), np.array(l2_direct) - np.array(l2_cross_ortho)], showmedians=True)
+    plt.xticks([1,2], ['direct vs ortho', 'direct vs crossfit_ortho'])
     plt.ylabel('$\ell_2$ error decrease')
     plt.tight_layout()
     plt.savefig(os.path.join(target_dir, 'logistic_te_l2_errors_{}.pdf'.format('_'.join(['{}_{}'.format(k, v) for k,v in opts.items()]))))
     plt.close()
 
     plt.figure(figsize=(5, 3))
-    plt.violinplot([np.array(l1_direct) - np.array(l1_ortho)], showmedians=True)
-    plt.xticks([1], ['direct - ortho'])
+    plt.violinplot([np.array(l1_direct) - np.array(l1_ortho), np.array(l1_direct) - np.array(l1_cross_ortho)], showmedians=True)
+    plt.xticks([1,2], ['direct vs ortho', 'direct vs crossfit_ortho'])
     plt.ylabel('$\ell_1$ error decrease')
     plt.tight_layout()
     plt.savefig(os.path.join(target_dir, 'logistic_te_l1_errors_{}.pdf'.format('_'.join(['{}_{}'.format(k, v) for k,v in opts.items()]))))
     plt.close()
 
-    return l1_direct, l1_ortho, l2_direct, l2_ortho
+    return l1_direct, l1_ortho, l1_cross_ortho, l2_direct, l2_ortho, l2_cross_ortho
 
 if __name__=="__main__":
     
@@ -169,18 +205,23 @@ if __name__=="__main__":
     if not os.path.exists(target_dir):
         os.makedirs(target_dir)
 
+
     l2_direct_list = []
     l2_ortho_list = []
+    l2_cross_ortho_list = []
     l1_direct_list = []
     l1_ortho_list = []
+    l1_cross_ortho_list = []
 
     for kappa_x in kappa_grid:
         opts['kappa_x'] = kappa_x
-        l1_direct, l1_ortho, l2_direct, l2_ortho = main(opts, target_dir=target_dir, reload_results=reload_results)
+        l1_direct, l1_ortho, l1_cross_ortho, l2_direct, l2_ortho, l2_cross_ortho = main(opts, target_dir=target_dir, reload_results=reload_results)
         l2_direct_list.append(l2_direct)
         l2_ortho_list.append(l2_ortho)
+        l2_cross_ortho_list.append(l2_cross_ortho)
         l1_direct_list.append(l1_direct)
         l1_ortho_list.append(l1_ortho)
+        l1_cross_ortho_list.append(l1_cross_ortho)
     
     param_str = '_'.join(['{}_{}'.format(k, v) for k,v in opts.items() if k!='kappa_x'])
 
@@ -188,15 +229,19 @@ if __name__=="__main__":
     joblib.dump(np.array(l1_direct_list), os.path.join(target_dir, 'logistic_te_l1_direct_with_growing_kappa_x_{}.jbl'.format(param_str)))
     joblib.dump(np.array(l2_ortho_list), os.path.join(target_dir, 'logistic_te_l2_ortho_with_growing_kappa_x_{}.jbl'.format(param_str)))
     joblib.dump(np.array(l1_ortho_list), os.path.join(target_dir, 'logistic_te_l1_ortho_with_growing_kappa_x_{}.jbl'.format(param_str)))
-
-    diff2 = np.array(l2_direct_list) - np.array(l2_ortho_list)
-    diff1 = np.array(l1_direct_list) - np.array(l1_ortho_list)
-    plt.figure(figsize=(7, 5))
-    plt.subplot(1, 2, 1)
-    plt.plot(kappa_grid, np.median(diff2, axis=1), label='l2_diff')
-    plt.fill_between(kappa_grid, np.percentile(diff2, 95, axis=1), np.percentile(diff2, 5, axis=1), alpha=0.3)
-    plt.subplot(1, 2, 2)
-    plt.plot(kappa_grid, np.median(diff1, axis=1), label='l1_diff')
-    plt.fill_between(kappa_grid, np.percentile(diff1, 95, axis=1), np.percentile(diff1, 5, axis=1), alpha=0.3)
+    joblib.dump(np.array(l2_cross_ortho_list), os.path.join(target_dir, 'logistic_te_l2_cross_ortho_with_growing_kappa_x_{}.jbl'.format(param_str)))
+    joblib.dump(np.array(l1_cross_ortho_list), os.path.join(target_dir, 'logistic_te_l1_cross_ortho_with_growing_kappa_x_{}.jbl'.format(param_str)))
+    
+    plt.figure(figsize=(5, 3))
+    plt.plot(kappa_grid, np.median(l2_direct_list, axis=1), label='direct')
+    plt.fill_between(kappa_grid, np.percentile(l2_direct_list, 100, axis=1), np.percentile(l2_direct_list, 0, axis=1), alpha=0.3)
+    plt.plot(kappa_grid, np.median(l2_ortho_list, axis=1), label='ortho')
+    plt.fill_between(kappa_grid, np.percentile(l2_ortho_list, 100, axis=1), np.percentile(l2_ortho_list, 0, axis=1), alpha=0.3)
+    plt.plot(kappa_grid, np.median(l2_cross_ortho_list, axis=1), label='cross_ortho')
+    plt.fill_between(kappa_grid, np.percentile(l2_cross_ortho_list, 100, axis=1), np.percentile(l2_cross_ortho_list, 0, axis=1), alpha=0.3)
     plt.legend()
-    plt.savefig(os.path.join(target_dir, 'logistic_te_l2_errors_with_growing_kappa_x_{}.pdf'.format(param_str)))
+    plt.xlabel('support size $k_g$')
+    plt.ylabel('$\ell_2$ error')
+    plt.tight_layout()
+    param_str = '_'.join(['{}_{}'.format(k, v) for k,v in opts.items() if k!='kappa_x'])
+    plt.savefig(os.path.join(target_dir, 'logistic_te_growing_kappa_x_{}.pdf'.format(param_str)))

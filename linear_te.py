@@ -135,7 +135,7 @@ def main(opts, target_dir='.', reload_results=True):
     
     plt.figure(figsize=(5, 3))
     plt.violinplot([np.array(l2_direct) - np.array(l2_ortho), np.array(l2_direct) - np.array(l2_cross_ortho)], showmedians=True)
-    plt.xticks([1,2], ['direct - ortho', 'direct - crossfit_ortho'])
+    plt.xticks([1,2], ['direct vs ortho', 'direct vs crossfit_ortho'])
     plt.ylabel('$\ell_2$ error decrease')
     plt.tight_layout()
     plt.savefig(os.path.join(target_dir, 'linear_te_l2_errors_{}.pdf'.format('_'.join(['{}_{}'.format(k, v) for k,v in opts.items()]))))
@@ -143,7 +143,7 @@ def main(opts, target_dir='.', reload_results=True):
 
     plt.figure(figsize=(5, 3))
     plt.violinplot([np.array(l1_direct) - np.array(l1_ortho), np.array(l1_direct) - np.array(l1_cross_ortho)], showmedians=True)
-    plt.xticks([1,2], ['direct - ortho', 'direct - crossfit_ortho'])
+    plt.xticks([1,2], ['direct vs ortho', 'direct vs crossfit_ortho'])
     plt.ylabel('$\ell_1$ error decrease')
     plt.tight_layout()
     plt.savefig(os.path.join(target_dir, 'linear_te_l1_errors_{}.pdf'.format('_'.join(['{}_{}'.format(k, v) for k,v in opts.items()]))))
@@ -196,11 +196,11 @@ if __name__=="__main__":
     
     plt.figure(figsize=(5, 3))
     plt.plot(kappa_grid, np.median(l2_direct_list, axis=1), label='direct')
-    plt.fill_between(kappa_grid, np.percentile(l2_direct_list, 95, axis=1), np.percentile(l2_direct_list, 5, axis=1), alpha=0.3)
+    plt.fill_between(kappa_grid, np.percentile(l2_direct_list, 100, axis=1), np.percentile(l2_direct_list, 0, axis=1), alpha=0.3)
     plt.plot(kappa_grid, np.median(l2_ortho_list, axis=1), label='ortho')
-    plt.fill_between(kappa_grid, np.percentile(l2_ortho_list, 95, axis=1), np.percentile(l2_ortho_list, 5, axis=1), alpha=0.3)
+    plt.fill_between(kappa_grid, np.percentile(l2_ortho_list, 100, axis=1), np.percentile(l2_ortho_list, 0, axis=1), alpha=0.3)
     plt.plot(kappa_grid, np.median(l2_cross_ortho_list, axis=1), label='cross_ortho')
-    plt.fill_between(kappa_grid, np.percentile(l2_cross_ortho_list, 95, axis=1), np.percentile(l2_cross_ortho_list, 5, axis=1), alpha=0.3)
+    plt.fill_between(kappa_grid, np.percentile(l2_cross_ortho_list, 100, axis=1), np.percentile(l2_cross_ortho_list, 0, axis=1), alpha=0.3)
     plt.legend()
     plt.xlabel('support size $k_g$')
     plt.ylabel('$\ell_2$ error')

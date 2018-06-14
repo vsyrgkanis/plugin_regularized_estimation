@@ -15,12 +15,6 @@ class LogisticWithOffset():
         self.session = None
         
     def tf_graph_init(self, num_outcomes, num_features):
-        '''
-        Creates the graph that corresponds to the squared loss with an ell_1 penalty
-        only on the subset of features specified by the self._subset variable. Also
-        creates the optimizer that minimizes this loss and a persistent tensorflow
-        session for the class.
-        '''
         self.Y = tf.placeholder("float", [None, num_outcomes], name="outcome")
         self.X = tf.placeholder("float", [None, num_features], name="features")
         self.Offset = tf.placeholder("float", [None, 1], name="offset")
