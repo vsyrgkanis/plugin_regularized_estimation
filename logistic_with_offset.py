@@ -67,7 +67,7 @@ class LogisticWithOffset():
             self.SampleWeights = tf.placeholder("float", [None, 1], name="sample_weights")
             
             # Linear index
-            self.weights = tf.Variable(tf.zeros([num_features, num_outcomes]), name="weights")
+            self.weights = tf.Variable(tf.random_normal([num_features, num_outcomes], stddev=.1), name="weights")
             if self._fit_intercept:
                 self.bias = tf.Variable(tf.zeros([num_outcomes]), name="biases")
                 self.index = tf.add(tf.matmul(self.X, self.weights), self.bias)

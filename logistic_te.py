@@ -52,7 +52,7 @@ def direct_fit(x, t, z, y, opts):
     model_y = LogisticWithOffset(alpha_l1=l1_reg, 
                                     alpha_l2=0.,
                                     steps=opts['steps'], learning_rate=opts['lr'], 
-                                    learning_schedule=opts['lr_schedule'], tol=1e-20, batch_size=opts['bs'])
+                                    learning_schedule=opts['lr_schedule'], tol=1e-6, batch_size=opts['bs'])
     model_y.fit(comp_x, y)
 
     # Return direct models
@@ -101,7 +101,7 @@ def dml_crossfit(x, t, z, y, opts):
         comp_res[test_index], offset[test_index], V[test_index] = first_stage_estimates(x, t, z, y, train_index, test_index, opts)
     
     # Calculate normalized sample weights. Clipping for instability
-    sample_weights = (1./np.clip(V, 0.0001, 1))/np.mean((1./np.clip(V, 0.0001, 1)))
+    sample_weights = (1./np.clip(V, 0.01, 1))/np.mean((1./np.clip(V, 0.01, 1)))
 
     # Fit second stage regression with plugin nuisance estimates
     l1_reg = np.sqrt(np.log(z.shape[1])/n_samples) #+ np.log(x.shape[1])*opts['kappa_x']**2/ ((1 - 1./opts['n_folds']) * n_samples)
@@ -110,11 +110,11 @@ def dml_crossfit(x, t, z, y, opts):
     model_final = LogisticWithOffset(alpha_l1=opts['lambda_coef'] * l1_reg, 
                                     alpha_l2=0.,
                                     steps=opts['steps'], learning_rate=opts['lr'], 
-                                    learning_schedule=opts['lr_schedule'], tol=1e-20, batch_size=opts['bs'])
+                                    learning_schedule=opts['lr_schedule'], tol=1e-6, batch_size=opts['bs'])
 
     model_final.fit(comp_res, y, offset=offset, sample_weights=sample_weights)
 
-    return model_final.coef_.flatten()
+    return model_final
 
 
 def experiment(exp_id, opts):
@@ -138,7 +138,8 @@ def experiment(exp_id, opts):
     print('Direct l1: {:.3f}'.format(l1_direct))
     
     # Orthogonal lasso estimation
-    ortho_coef = dml_crossfit(x, t, z, y, opts)
+    model_dml = dml_crossfit(x, t, z, y, opts)
+    ortho_coef = model_dml.coef_.flatten()
     l1_cross_ortho = np.linalg.norm(ortho_coef.flatten() - true_coef.flatten(), ord=1)
     l2_cross_ortho = np.linalg.norm(ortho_coef.flatten() - true_coef.flatten(), ord=2)
     print('CrossOrtho coef:' + ', '.join(["({}: {:.3f})".format(ind, c) for ind, c in enumerate(ortho_coef.flatten()) if np.abs(c)>0.001]))
