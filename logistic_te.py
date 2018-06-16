@@ -6,7 +6,8 @@ from sklearn.linear_model import Lasso
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from logistic_with_offset import LogisticWithOffset
+#from logistic_with_offset import LogisticWithOffset
+from scipy_logistic_with_offset import LogisticWithOffset
 from joblib import Parallel, delayed
 import joblib
 
@@ -46,9 +47,6 @@ def direct_fit(x, t, z, y, opts):
     # Run logistic lasso for outcome as function of composite treatments and controls
     comp_x = np.concatenate((z * t, x), axis=1)
     l1_reg = opts['lambda_coef'] * np.sqrt(np.log(comp_x.shape[1])/n_samples)
-    #model_y = LogisticRegression(penalty='l1', C=1./(l1_reg * n_samples))
-    #model_y.fit(comp_x, y.ravel())
-    
     model_y = LogisticWithOffset(alpha_l1=l1_reg, 
                                     alpha_l2=0.,
                                     steps=opts['steps'], learning_rate=opts['lr'], 
