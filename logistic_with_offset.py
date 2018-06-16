@@ -151,6 +151,13 @@ class LogisticWithOffset():
         ''' Coefficient of linear index '''
         return self.session.run(self.weights.value())
 
+    @property
+    def intercept_(self):
+        if self._fit_intercept:
+            return self.session.run(self.bias.value())
+        else:
+            return None
+
     def score(self, X, y_true, offset=None):
         ''' AUC score of fitted model '''
         from sklearn.metrics import roc_auc_score
