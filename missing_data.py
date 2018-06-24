@@ -11,6 +11,8 @@ from joblib import Parallel, delayed
 import joblib
 import scipy
 from scipy.optimize import fmin_l_bfgs_b
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import PolynomialFeatures
 
 
 def cross_product(X1, X2):
@@ -22,8 +24,8 @@ def cross_product(X1, X2):
 
 def gen_data(n_samples, dim_x, dim_z, kappa_theta, kappa_z, sigma_x, sigma_epsilon, sigma_eta):
     """ Generate data from:
-    y = <x[support_theta], \theta> + <z[support_z], alpha_z> + epsilon
-    Prob[d=1 | z, x] = Logistic(<z[support_z], gamma_z>)
+    y = <x[support_theta], \theta> + <x \cross z[support_z], alpha> + <x \cross (z[support_z]**2 - E[z**2]), alpha> + epsilon
+    Prob[d=1 | z, x] = Logistic(<x[support_theta], beta> + <z[support_z], gamma>)
     epsilon ~ Normal(0, sigma_epsilon)
     x, z ~ Normal(0, sigma_x)
     alpha_x, beta_x, theta are all equal to 1
@@ -38,44 +40,51 @@ def gen_data(n_samples, dim_x, dim_z, kappa_theta, kappa_z, sigma_x, sigma_epsil
     support_z = np.arange(0, kappa_z)
     theta = np.zeros(dim_x)
     theta[support_x] = np.random.uniform(2, 2, size=kappa_theta)
+    support_xz = np.array([dim_z * i + support_z for i in support_x]).flatten()
     alpha = np.zeros(dim_z * dim_x)
-    support_xz = np.array([dim_z * i + support_z for i in range(dim_x)]).flatten()
-    alpha[support_xz] = np.random.uniform(1, 1, size=kappa_z * dim_x)
+    alpha[support_xz] = np.random.uniform(1, 2, size=kappa_z * kappa_theta)
+    alpha2 = np.zeros(dim_z * dim_x)
+    alpha2[support_xz] = np.random.uniform(1, 2, size=kappa_z * kappa_theta)
     beta = np.zeros(dim_x)
-    beta[support_x] = np.random.uniform(0, 0, size=kappa_theta) / kappa_theta
+    beta[support_x] = np.random.uniform(0, 1, size=kappa_theta) / kappa_theta
     gamma = np.zeros(dim_z)
-    gamma[support_z] = np.random.uniform(2, 2, size=kappa_z) / kappa_z
+    gamma[support_z] = np.random.uniform(2, 3, size=kappa_z) / kappa_z
     
-    y = x @ theta + cross_product(x, z) @ alpha + 1. * cross_product(x, z**2 - sigma_x**2/3.) @ alpha + np.random.normal(0, sigma_epsilon, size=n_samples)
+    uz = cross_product(z, x) @ alpha + 2. * cross_product(z**2 - (sigma_x**2)/3., x) @ alpha2 
+    y = x @ theta + uz + np.random.normal(0, sigma_epsilon, size=n_samples)
     index_d = x @ beta + z @ gamma
-    p_d = scipy.special.expit(sigma_eta * index_d)
+    pz = scipy.special.expit(sigma_eta * index_d)
     plt.figure()
     plt.subplot(1, 2, 1)
-    plt.hist(p_d)
+    plt.hist(pz)
     plt.subplot(1, 2, 2)
     plt.hist(index_d)
     plt.savefig('propensity.png')
     plt.close()
-    d = np.random.binomial(1, p_d)
-    return x, z, d, d*y, theta, alpha, beta, gamma
+    d = np.random.binomial(1, pz)
+    return x, z, d, d*y, theta, pz, uz 
 
-def direct_fit(x, z, d, dy, opts):
-    comp_x = np.concatenate((x, cross_product(x, z)), axis=1)
-    model_y = Lasso(alpha=opts['lambda_coef'] * np.sqrt(np.log(x.shape[1])/x.shape[0]), fit_intercept=False) #LassoCV(fit_intercept=False) #alpha=opts['lambda_coef'] * np.sqrt(np.log(comp_x.shape[1])/comp_x.shape[0]), fit_intercept=False)
+def direct_fit(x, z, d, dy, true_pz, true_uz, opts):
+    ''' Direct lasso regression of y[d==1] on x[d==1], (x cross z)[d==1] '''
+    comp_x = np.concatenate((x, cross_product(z, x)), axis=1)
+    model_y = LassoCV()
     model_y.fit(comp_x[d==1], dy[d==1])
     return model_y.coef_[:x.shape[1]]
 
-def non_ortho_oracle(x, z, d, dy, opts, alpha, beta, gamma):
-    sample_weights = d / scipy.special.expit(opts['sigma_eta'] * (x @ beta + z @ gamma))
-    model_final = Lasso(alpha=opts['lambda_coef'] * np.sqrt(np.log(x.shape[1])/n_samples), fit_intercept=False)
+def non_ortho_oracle(x, z, d, dy, true_pz, true_uz, opts):
+    ''' Non orthogonal inverse propensity estimation with oracle access to propensity p(z) '''
+    n_samples, n_features = x.shape
+    sample_weights = d / true_pz
+    model_final = Lasso(alpha=opts['lambda_coef'] * np.sqrt(np.log(n_features)/n_samples), fit_intercept=False)
     model_final.fit(np.sqrt(sample_weights.reshape(-1, 1)) * x, np.sqrt(sample_weights) * dy)
-    
     return model_final.coef_
 
-def ortho_oracle(x, z, d, dy, opts, alpha, beta, gamma):
+def ortho_oracle(x, z, d, dy, true_pz, true_uz, opts):
+    ''' Orthogonal inverse propensity estimation with orthogonal correction and oracle
+    access to both propensity p(z) and u(z) = E[u(y, x'theta) | z] '''
     n_samples, n_features = x.shape
-    pz = scipy.special.expit(opts['sigma_eta'] * (x @ beta + z @ gamma))
-    hz = (cross_product(x, z) @ alpha) * (d - pz) / pz
+    pz = true_pz
+    hz = true_uz * (d - pz) / pz
     l1_reg = opts['lambda_coef'] * np.sqrt(np.log(n_features)/n_samples)
     def loss_and_jac(extended_coef):
         coef = extended_coef[:n_features] - extended_coef[n_features:]
@@ -93,7 +102,8 @@ def ortho_oracle(x, z, d, dy, opts, alpha, beta, gamma):
 
     return w[:n_features] - w[n_features:]
 
-def non_ortho(x, z, d, dy, opts, alpha, beta, gamma):
+def non_ortho(x, z, d, dy, true_pz, true_uz, opts):
+    ''' Non orthogonal inverse propensity estimation with a first stage propensity estimation '''
     n_samples = x.shape[0]
 
     # nuisance estimation
@@ -102,19 +112,17 @@ def non_ortho(x, z, d, dy, opts, alpha, beta, gamma):
     pz = np.zeros(n_samples)
     for train_index, test_index in kf.split(x):        
         pz[test_index] = LogisticRegressionCV(penalty='l1', solver='liblinear').fit(comp_x[train_index], d[train_index]).predict_proba(comp_x[test_index])[:, 1]
-    sample_weights = d / pz
-    plt.figure()
-    plt.hist(pz)
-    plt.savefig('fitted_weights.png')
-    plt.close()
 
     # final regression
+    sample_weights = d / pz
     model_final = Lasso(alpha=opts['lambda_coef'] * np.sqrt(np.log(x.shape[1])/n_samples), fit_intercept=False)
     model_final.fit(np.sqrt(sample_weights.reshape(-1, 1)) * x, np.sqrt(sample_weights) * dy)
     
     return model_final.coef_
 
-def ortho(x, z, d, dy, opts, alpha, beta, gamma):
+def ortho(x, z, d, dy, true_pz, true_uz, opts):
+    ''' Orthogonal inverse propensity estimation with orthogonal correction and first stage
+    estimation of both propensity p(z) and residual u(z) = E[u(y, x'theta) | z] '''
     n_samples, n_features = x.shape
     comp_x = np.concatenate((x, z), axis=1)
 
@@ -123,13 +131,18 @@ def ortho(x, z, d, dy, opts, alpha, beta, gamma):
     pz = np.zeros(n_samples)
     uz = np.zeros(n_samples)
     for train_index, test_index in kf.split(x):
-        
+        # propensity estimation
         model_p = LogisticRegressionCV(penalty='l1', solver='liblinear')
         model_p.fit(comp_x[train_index], d[train_index])
         pz[test_index] = model_p.predict_proba(comp_x[test_index])[:, 1]
-        theta_prel = non_ortho(x[train_index], z[train_index], d[train_index], dy[train_index], opts, alpha, beta, gamma)
-        uz[test_index] = RandomForestRegressor().fit(comp_x[train_index][d[train_index]==1], dy[train_index][d[train_index]==1]).predict(comp_x[test_index])
+        # preliminary theta estimation with non orthogonal IPS method
+        theta_prel = non_ortho(x[train_index], z[train_index], d[train_index], dy[train_index], true_pz[train_index], true_uz[train_index], opts)
+        # conditional residual estimation E[u(y, x'theta) | z], by regressing y on x, z and then subtracting x'theta_prel
+        model_uz = RandomForestRegressor(n_estimators=200, min_samples_leaf=20)
+        model_uz.fit(comp_x[train_index][d[train_index]==1], dy[train_index][d[train_index]==1])
+        uz[test_index] = model_uz.predict(comp_x[test_index])
         uz[test_index] -= x[test_index] @ theta_prel
+    # orthogonal correction multiplier of the index
     hz = uz * (d - pz) / pz
 
     # final regression
@@ -151,111 +164,90 @@ def ortho(x, z, d, dy, opts, alpha, beta, gamma):
     return w[:n_features] - w[n_features:]
     
 
-def experiment(exp_id, opts):
+def experiment(exp_id, methods, opts):
     np.random.seed(exp_id)
     # Generate data
-    x, z, d, dy, theta, alpha, beta, gamma =\
+    x, z, d, dy, theta, true_pz, true_uz =\
             gen_data(opts['n_samples'], opts['dim_x'], opts['dim_z'], opts['kappa_theta'], opts['kappa_z'], 
             opts['sigma_x'], opts['sigma_epsilon'], opts['sigma_eta'])
-
     print('True coef:' + ', '.join(["({}: {:.3f})".format(ind, c) for ind, c in enumerate(theta) if np.abs(c)>0.001]))
 
-    # Direct lasso for all coefficients
-    direct_coef = direct_fit(x, z, d, dy, opts)
-    l1_direct = np.linalg.norm(direct_coef - theta, ord=1)
-    l2_direct = np.linalg.norm(direct_coef - theta, ord=2)
-    print('Direct coef:' + ', '.join(["({}: {:.3f})".format(ind, c) for ind, c in enumerate(direct_coef) if np.abs(c)>0.001]))
-    print('Direct l1: {:.3f}'.format(l1_direct))
+    coefs = {}
+    l1_error = {}
+    l2_error = {}
+    for m_name, m_func in methods.items():
+        coefs[m_name] = m_func(x, z, d, dy, true_pz, true_uz, opts)
+        l1_error[m_name] = np.linalg.norm(coefs[m_name] - theta, ord=1)
+        l2_error[m_name] = np.linalg.norm(coefs[m_name] - theta, ord=2)
+        print('{} l1: {:.3f}'.format(m_name, l1_error[m_name]))
+        print('{} l2: {:.3f}'.format(m_name, l2_error[m_name]))
 
-    eps = .5
-    alpha, beta, gamma = alpha + np.random.uniform(-eps, eps, alpha.shape), beta + np.random.uniform(-eps, eps, beta.shape), gamma + np.random.uniform(-eps, eps, gamma.shape)
-    non_ortho_coef = non_ortho(x, z, d, dy, opts, alpha, beta, gamma)
-    l1_non_ortho = np.linalg.norm(non_ortho_coef - theta, ord=1)
-    l2_non_ortho = np.linalg.norm(non_ortho_coef - theta, ord=2)
-    print('Direct coef:' + ', '.join(["({}: {:.3f})".format(ind, c) for ind, c in enumerate(non_ortho_coef) if np.abs(c)>0.001]))
-    print('Direct l1: {:.3f}'.format(l1_non_ortho))
-    
-    # Orthogonal lasso estimation
-    ortho_coef = ortho(x, z, d, dy, opts, alpha, beta, gamma)
-    l1_cross_ortho = np.linalg.norm(ortho_coef - theta, ord=1)
-    l2_cross_ortho = np.linalg.norm(ortho_coef - theta, ord=2)
-    print('CrossOrtho coef:' + ', '.join(["({}: {:.3f})".format(ind, c) for ind, c in enumerate(ortho_coef) if np.abs(c)>0.001]))
-    print('CrossOrtho l1: {:.3f}'.format(l1_cross_ortho))
-
-    return l1_direct, l2_direct, l1_non_ortho, l2_non_ortho, l1_cross_ortho, l2_cross_ortho, direct_coef, non_ortho_coef, ortho_coef
+    return l1_error, l2_error, coefs
 
 def main(opts, target_dir='.', reload_results=True):
     random_seed = 123
-
+    
+    methods = {'Direct': direct_fit, 'IPS oracle': non_ortho_oracle, 'Ortho oracle': ortho_oracle, 'IPS': non_ortho, 'Ortho': ortho}
     results_file = os.path.join(target_dir, 'logistic_te_errors_{}.jbl'.format('_'.join(['{}_{}'.format(k, v) for k,v in opts.items()])))
     if reload_results and os.path.exists(results_file):
         results = joblib.load(results_file)
     else:
         results = Parallel(n_jobs=-1, verbose=1)(
-                delayed(experiment)(random_seed + exp_id, opts) 
+                delayed(experiment)(random_seed + exp_id, methods, opts) 
                 for exp_id in range(opts['n_experiments']))
     joblib.dump(results, results_file)
     
-    l1_direct = np.array([results[i][0] for i in range(opts['n_experiments'])])
-    l2_direct = np.array([results[i][1] for i in range(opts['n_experiments'])])
-    l1_non_ortho = np.array([results[i][2] for i in range(opts['n_experiments'])])
-    l2_non_ortho = np.array([results[i][3] for i in range(opts['n_experiments'])])
-    l1_cross_ortho = np.array([results[i][4] for i in range(opts['n_experiments'])])
-    l2_cross_ortho = np.array([results[i][5] for i in range(opts['n_experiments'])])
-    direct_coef = np.array([results[i][6] for i in range(opts['n_experiments'])])
-    non_ortho_coef = np.array([results[i][7] for i in range(opts['n_experiments'])])
-    ortho_coef = np.array([results[i][8] for i in range(opts['n_experiments'])])
+    l1_errors = {}
+    l2_errors = {}
+    coefs = {}
+    for m_name, _ in methods.items():
+        l1_errors[m_name] = np.array([results[i][0][m_name] for i in range(opts['n_experiments'])])
+        l2_errors[m_name] = np.array([results[i][1][m_name] for i in range(opts['n_experiments'])])
+        coefs[m_name] = np.array([results[i][2][m_name] for i in range(opts['n_experiments'])])
 
-    plt.figure(figsize=(3 * ortho_coef.shape[1], 3))
-    for i in range(ortho_coef.shape[1]):
-        plt.subplot(3, ortho_coef.shape[1], i + 1)
-        plt.hist(direct_coef[:, i])
-        plt.title("$\mu$: {:.2f}, $\sigma$: {:.2f}".format(np.mean(direct_coef[:, i]), np.std(direct_coef[:, i])))
-    for i in range(ortho_coef.shape[1]):
-        plt.subplot(3, ortho_coef.shape[1], ortho_coef.shape[1] + i + 1)
-        plt.hist(non_ortho_coef[:, i])
-        plt.title("$\mu$: {:.2f}, $\sigma$: {:.2f}".format(np.mean(non_ortho_coef[:, i]), np.std(non_ortho_coef[:, i])))
-    for i in range(ortho_coef.shape[1]):
-        plt.subplot(3, ortho_coef.shape[1], 2*ortho_coef.shape[1] + i + 1)
-        plt.hist(ortho_coef[:, i])
-        plt.title("$\mu$: {:.2f}, $\sigma$: {:.2f}".format(np.mean(ortho_coef[:, i]), np.std(ortho_coef[:, i])))
+    n_methods = len(methods)
+    n_coefs = opts['dim_x']
+    plt.figure(figsize=(4 * n_coefs, 2 * n_methods))
+    for it, (m_name, _) in enumerate(methods.items()):
+        for i in range(coefs[m_name].shape[1]):
+            plt.subplot(n_methods, n_coefs, it * n_coefs + i + 1)
+            plt.hist(coefs[m_name][:, i])
+            plt.title("{}[{}]. $\mu$: {:.2f}, $\sigma$: {:.2f}".format(m_name, i, np.mean(coefs[m_name][:, i]), np.std(coefs[m_name][:, i])))
     plt.tight_layout()
     plt.savefig(os.path.join(target_dir, 'dist_{}.png'.format('_'.join(['{}_{}'.format(k, v) for k,v in opts.items()]))), dpi=300)
     plt.close()
 
-
-    plt.figure(figsize=(10, 3))
-    plt.subplot(1, 3, 1)
-    plt.violinplot([np.array(l2_direct), np.array(l2_non_ortho), np.array(l2_cross_ortho)], showmedians=True)
-    plt.xticks([1, 2, 3], ['direct', 'non_ortho', 'ortho'])
+    plt.figure(figsize=(n_methods, 3))
+    plt.violinplot([l2_errors[m_name] for m_name in methods.keys()], showmedians=True)
+    plt.xticks(np.arange(1, n_methods + 1), list(methods.keys()))
     plt.ylabel('$\ell_2$ error')
-    plt.subplot(1, 3, 2)
-    plt.violinplot([np.array(l2_direct) - np.array(l2_cross_ortho), np.array(l2_direct) - np.array(l2_non_ortho)], showmedians=True)
-    plt.xticks([1, 2], ['direct vs ortho', 'direct vs non_ortho'])
-    plt.ylabel('$\ell_2$ error decrease')
-    plt.subplot(1, 3, 3)
-    plt.violinplot([np.array(l2_non_ortho) - np.array(l2_cross_ortho)], showmedians=True)
-    plt.xticks([1], ['non_ortho vs ortho'])
-    plt.ylabel('$\ell_2$ error decrease')
     plt.tight_layout()
     plt.savefig(os.path.join(target_dir, 'l2_errors_{}.png'.format('_'.join(['{}_{}'.format(k, v) for k,v in opts.items()]))))
     plt.close()
 
-    return l1_direct, l1_cross_ortho, l2_direct, l2_cross_ortho
+    plt.figure(figsize=(n_methods, 3))
+    plt.violinplot([l2_errors[m_name] - l2_errors['Ortho'] for m_name in methods.keys() if m_name != 'Ortho'], showmedians=True)
+    plt.xticks(np.arange(1, n_methods), [m_name for m_name in methods.keys() if m_name != 'Ortho'])
+    plt.ylabel('$\ell_2$[method] - $\ell_2$[Ortho]')
+    plt.tight_layout()
+    plt.savefig(os.path.join(target_dir, 'l2_decrease_{}.png'.format('_'.join(['{}_{}'.format(k, v) for k,v in opts.items()]))))
+    plt.close()
+
+    return l1_errors, l2_errors, coefs
 
 if __name__=="__main__":
 
-    opts= {'n_experiments': 10, # number of monte carlo experiments
-            'n_samples': 50000, # samples used for estimation
+    opts= {'n_experiments': 1000, # number of monte carlo experiments
+            'n_samples': 5000, # samples used for estimation
             'dim_x': 20, # dimension of controls x
-            'dim_z': 50, # dimension of variables used for heterogeneity (subset of x)
-            'kappa_theta': 2, # support size of target parameter
-            'kappa_z': 30, # support size of nuisance
+            'dim_z': 4, # dimension of variables used for heterogeneity (subset of x)
+            'kappa_theta': 1, # support size of target parameter
+            'kappa_z': 1, # support size of nuisance
             'sigma_epsilon': 1., # variance of error in secondary moment equation
             'sigma_eta': .1, # variance of error in secondary moment equation, i.e. multiplier in logistic index
             'sigma_x': 3, # variance parameter for co-variate distribution
-            'lambda_coef': 0.5, # coeficient in front of the asymptotic rate for regularization lambda
-            'n_folds': 2, # number of folds used in cross-fitting
+            'lambda_coef': 1.0, # coeficient in front of the asymptotic rate for regularization lambda
+            'n_folds': 3, # number of folds used in cross-fitting
     }
     reload_results = False
     target_dir = 'results_missing'
