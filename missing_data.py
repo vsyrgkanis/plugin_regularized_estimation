@@ -217,7 +217,7 @@ def main(opts, target_dir='.', reload_results=True):
     plt.savefig(os.path.join(target_dir, 'dist_{}.png'.format('_'.join(['{}_{}'.format(k, v) for k,v in opts.items()]))), dpi=300)
     plt.close()
 
-    plt.figure(figsize=(n_methods, 3))
+    plt.figure(figsize=(1.5 * n_methods, 2))
     plt.violinplot([l2_errors[m_name] for m_name in methods.keys()], showmedians=True)
     plt.xticks(np.arange(1, n_methods + 1), list(methods.keys()))
     plt.ylabel('$\ell_2$ error')
@@ -225,12 +225,12 @@ def main(opts, target_dir='.', reload_results=True):
     plt.savefig(os.path.join(target_dir, 'l2_errors_{}.png'.format('_'.join(['{}_{}'.format(k, v) for k,v in opts.items()]))))
     plt.close()
 
-    plt.figure(figsize=(n_methods, 3))
+    plt.figure(figsize=(1.5 * n_methods, 2))
     plt.violinplot([l2_errors[m_name] - l2_errors['Ortho'] for m_name in methods.keys() if m_name != 'Ortho'], showmedians=True)
     plt.xticks(np.arange(1, n_methods), [m_name for m_name in methods.keys() if m_name != 'Ortho'])
     plt.ylabel('$\ell_2$[method] - $\ell_2$[Ortho]')
     plt.tight_layout()
-    plt.savefig(os.path.join(target_dir, 'l2_decrease_{}.png'.format('_'.join(['{}_{}'.format(k, v) for k,v in opts.items()]))))
+    plt.savefig(os.path.join(target_dir, 'l2_decrease_{}.png'.format('_'.join(['{}_{}'.format(k, v) for k,v in opts.items()]))), dpi=300)
     plt.close()
 
     return l1_errors, l2_errors, coefs
