@@ -13,6 +13,7 @@ import scipy
 from scipy.optimize import fmin_l_bfgs_b
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import PolynomialFeatures
+plt.style.use('ggplot')
 
 
 def cross_product(X1, X2):
@@ -217,7 +218,7 @@ def main(opts, target_dir='.', reload_results=True):
     plt.savefig(os.path.join(target_dir, 'dist_{}.png'.format('_'.join(['{}_{}'.format(k, v) for k,v in opts.items()]))), dpi=300)
     plt.close()
 
-    plt.figure(figsize=(1.5 * n_methods, 2))
+    plt.figure(figsize=(1.5 * n_methods, 2.5))
     plt.violinplot([l2_errors[m_name] for m_name in methods.keys()], showmedians=True)
     plt.xticks(np.arange(1, n_methods + 1), list(methods.keys()))
     plt.ylabel('$\ell_2$ error')
@@ -225,7 +226,7 @@ def main(opts, target_dir='.', reload_results=True):
     plt.savefig(os.path.join(target_dir, 'l2_errors_{}.png'.format('_'.join(['{}_{}'.format(k, v) for k,v in opts.items()]))))
     plt.close()
 
-    plt.figure(figsize=(1.5 * n_methods, 2))
+    plt.figure(figsize=(1.5 * n_methods, 2.5))
     plt.violinplot([l2_errors[m_name] - l2_errors['Ortho'] for m_name in methods.keys() if m_name != 'Ortho'], showmedians=True)
     plt.xticks(np.arange(1, n_methods), [m_name for m_name in methods.keys() if m_name != 'Ortho'])
     plt.ylabel('$\ell_2$[method] - $\ell_2$[Ortho]')
@@ -240,7 +241,7 @@ if __name__=="__main__":
     opts= {'n_experiments': 1000, # number of monte carlo experiments
             'n_samples': 5000, # samples used for estimation
             'dim_x': 20, # dimension of controls x
-            'dim_z': 4, # dimension of variables used for heterogeneity (subset of x)
+            'dim_z': 20, # dimension of variables used for heterogeneity (subset of x)
             'kappa_theta': 1, # support size of target parameter
             'kappa_z': 1, # support size of nuisance
             'sigma_epsilon': 1., # variance of error in secondary moment equation
@@ -249,7 +250,7 @@ if __name__=="__main__":
             'lambda_coef': 1.0, # coeficient in front of the asymptotic rate for regularization lambda
             'n_folds': 3, # number of folds used in cross-fitting
     }
-    reload_results = False
+    reload_results = True
     target_dir = 'results_missing'
 
     if not os.path.exists(target_dir):
