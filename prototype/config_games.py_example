@@ -1,0 +1,43 @@
+import numpy as np
+import games_one_player
+import metrics
+import plotting
+
+CONFIG = {
+        "dgps": {
+            "one_player": games_one_player.gen_data
+        },
+        "dgp_opts": {
+            'n_samples': 5000, # samples used for estimation
+            'n_dim': 30, # dimension of the feature space
+            'sigma_x': 3.0, # variance of the features
+            'sigma_eta': 0.5, # variance of gambit distribution in discrete choice error
+            'kappa_gamma': 1, # support size of the target parameter
+            'kappa_gamma_aux': 10, # support size for opponent in stylized dgp
+        },
+        "methods": {
+            "OracleLogistic": games_one_player.two_stage_oracle,
+            "2SLogistic": games_one_player.two_stage_non_orthogonal,
+            "2SLogisticNoSplit": games_one_player.two_stage_no_split,
+            "Ortho": games_one_player.two_stage_crossfit_orthogonal
+        },
+        "method_opts": {
+            'lambda_coef': 0.1, # coeficient in front of the asymptotic rate for regularization lambda
+        },
+        "metrics": {
+            "$\\ell_2$ error": metrics.l2_error,
+            "$\\ell_1$ error": metrics.l1_error
+        },
+        "plots": {
+            "param_hist": plotting.plot_param_histograms,
+            "metrics": plotting.plot_metrics,
+            "metric_comparisons": plotting.plot_metric_comparisons
+        },
+        "mc_opts": {
+            'n_experiments': 10, # number of monte carlo experiments
+            "seed": 123
+        },
+        "proposed_method": "Ortho",
+        "target_dir": "results_games",
+        "reload_results": False
+    }

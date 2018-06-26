@@ -4,17 +4,11 @@ from sklearn.model_selection import KFold
 from sklearn.linear_model import LogisticRegression, LogisticRegressionCV
 from sklearn.linear_model import Lasso, LassoCV, LinearRegression
 from sklearn.ensemble import RandomForestRegressor
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-from joblib import Parallel, delayed
-import joblib
 import scipy
 from scipy.optimize import fmin_l_bfgs_b
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import PolynomialFeatures
 from utils import cross_product
-plt.style.use('ggplot')
 
 ###############################
 # DGPs
@@ -92,7 +86,7 @@ def ortho_oracle(data, opts):
     n_samples, n_features = x.shape
     pz = true_pz
     hz = true_uz * (d - pz) / pz
-    l1_reg = opts['lambda_coef'] * np.sqrt(np.log(n_features)/n_samples)
+    l1_reg = 5. * opts['lambda_coef'] * np.sqrt(np.log(n_features)/n_samples)
     def loss_and_jac(extended_coef):
         coef = extended_coef[:n_features] - extended_coef[n_features:]
         index = x @ coef
