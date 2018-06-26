@@ -6,7 +6,6 @@ from sklearn.linear_model import Lasso
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-#from logistic_with_offset import LogisticWithOffset
 from scipy_logistic_with_offset import LogisticWithOffset
 from joblib import Parallel, delayed
 import joblib
@@ -48,9 +47,7 @@ def direct_fit(x, t, z, y, opts):
     comp_x = np.concatenate((z * t, x), axis=1)
     l1_reg = opts['lambda_coef'] * np.sqrt(np.log(comp_x.shape[1])/n_samples)
     model_y = LogisticWithOffset(alpha_l1=l1_reg, 
-                                    alpha_l2=0.,
-                                    steps=opts['steps'], learning_rate=opts['lr'], 
-                                    learning_schedule=opts['lr_schedule'], tol=1e-6, batch_size=opts['bs'])
+                                    alpha_l2=0., tol=1e-6)
     model_y.fit(comp_x, y)
 
     # Return direct models
@@ -106,9 +103,7 @@ def dml_crossfit(x, t, z, y, opts):
     print(np.log(x.shape[1])*opts['kappa_x']**2/ ((1 - 1./opts['n_folds']) * n_samples))
     print(l1_reg)
     model_final = LogisticWithOffset(alpha_l1=opts['lambda_coef'] * l1_reg, 
-                                    alpha_l2=0.,
-                                    steps=opts['steps'], learning_rate=opts['lr'], 
-                                    learning_schedule=opts['lr_schedule'], tol=1e-6, batch_size=opts['bs'])
+                                    alpha_l2=0., tol=1e-6)
 
     model_final.fit(comp_res, y, offset=offset, sample_weights=sample_weights)
 
@@ -201,10 +196,6 @@ if __name__=="__main__":
             'sigma_eta': 3, # variance of error in secondary moment equation
             'sigma_x': .5, # variance parameter for co-variate distribution
             'lambda_coef': .5, # coeficient in front of the asymptotic rate for regularization lambda
-            'steps': 400, # max iter for gradient based logistic regression
-            'lr': 0.05, # constant learning rate for gradient based regression
-            'lr_schedule': 'constant', # constant or decay
-            'bs': 10000, # batch size for SGD training
             'n_folds': 2, # number of folds used in cross-fitting
     }
     reload_results = False
