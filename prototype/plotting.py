@@ -6,11 +6,27 @@ import matplotlib.pyplot as plt
 plt.style.use('ggplot')
 from utils import filesafe
 
+
+def plot_subset_param_histograms(param_estimates, metric_results, config, subset):
+    for dgp_name, pdgp in param_estimates.items():
+        n_methods = len(list(pdgp.keys()))
+        n_params = config['dgp_opts']['kappa_gamma'] + 1
+        plt.figure(figsize=(4 * n_params, 2 * n_methods))
+        for it, m_name in enumerate(pdgp.keys()):
+            for inner_it, i in enumerate(subset):
+                plt.subplot(n_methods, n_params, it * n_params + inner_it + 1)
+                plt.hist(pdgp[m_name][:, i])
+                plt.title("{}[{}]. $\\mu$: {:.2f}, $\\sigma$: {:.2f}".format(m_name, i, np.mean(pdgp[m_name][:, i]), np.std(pdgp[m_name][:, i])))
+        plt.tight_layout()
+        plt.savefig(os.path.join(config['target_dir'], 'dist_dgp_{}_{}.png'.format(dgp_name, config['param_str'])), dpi=300)
+        plt.close()
+    return 
+
 def plot_param_histograms(param_estimates, metric_results, config):
     for dgp_name, pdgp in param_estimates.items():
         n_methods = len(list(pdgp.keys()))
         n_params = next(iter(pdgp.values())).shape[1]
-        fig = plt.figure(figsize=(4 * n_params, 2 * n_methods))
+        plt.figure(figsize=(4 * n_params, 2 * n_methods))
         for it, m_name in enumerate(pdgp.keys()):
             for i in range(pdgp[m_name].shape[1]):
                 plt.subplot(n_methods, n_params, it * n_params + i + 1)

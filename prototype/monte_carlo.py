@@ -91,8 +91,7 @@ def monte_carlo_main():
     args = parser.parse_args(sys.argv[1:])
 
     config = importlib.import_module(args.config)
-    mc = MonteCarlo(config.CONFIG)
-    mc.run()
+    MonteCarlo(config.CONFIG).run()
     
 if __name__=="__main__":
     monte_carlo_main()

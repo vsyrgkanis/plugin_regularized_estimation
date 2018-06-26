@@ -7,12 +7,14 @@ from sklearn import linear_model, clone
 from sklearn.linear_model import LogisticRegression, SGDClassifier
 from sklearn.model_selection import StratifiedKFold, GridSearchCV, KFold
 from sklearn.neural_network import MLPClassifier
-from scipy_logistic_with_gradient_correction import LogisticWithGradientCorrection
+from scipy_logistic_with_gradient_correction import LogisticWithOffsetAndGradientCorrection
 import scipy
 
-'''
-Data Generation
-'''
+
+###############################
+# DGPs
+###############################
+
 def gen_data(opts):
     '''
     Compute stylized dgp where opponents strategy is really a logistic regression
@@ -61,7 +63,7 @@ def first_stage_sigma(X, y_op, opts):
 def second_stage_logistic(X, y, sigma_hat_op, opts):
     n_samples, n_dim = X.shape
     l1_reg = opts['lambda_coef'] * np.sqrt(np.log(n_dim + 1)/n_samples)
-    estimator = LogisticWithGradientCorrection(alpha_l1=l1_reg, alpha_l2=0., tol=1e-6)
+    estimator = LogisticWithOffsetAndGradientCorrection(alpha_l1=l1_reg, alpha_l2=0., tol=1e-6)
     estimator.fit(np.concatenate((X, sigma_hat_op), axis=1), y)
     return estimator
 
@@ -110,7 +112,7 @@ def two_stage_crossfit_orthogonal(data, opts):
 
     # Final stage estimation
     l1_reg = opts['lambda_coef'] * np.sqrt(np.log(n_dim + 1)/(n_samples))
-    estimator = LogisticWithGradientCorrection(alpha_l1=l1_reg, alpha_l2=0., tol=1e-6)
+    estimator = LogisticWithOffsetAndGradientCorrection(alpha_l1=l1_reg, alpha_l2=0., tol=1e-6)
     estimator.fit(np.concatenate((X, sigma_hat_op), axis=1), y, grad_corrections=grad_corrections)
     
     print("Max correction: {}".format(np.linalg.norm(grad_corrections.flatten(), ord=np.inf)))

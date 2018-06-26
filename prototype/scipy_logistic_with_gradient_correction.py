@@ -5,20 +5,21 @@ from itertools import product
 import scipy
 from scipy.optimize import fmin_l_bfgs_b
 
-class LogisticWithGradientCorrection():
+class LogisticWithOffsetAndGradientCorrection():
     def __init__(self, alpha_l1=0.1, alpha_l2=0.1, tol=1e-6):
         self._alpha_l1 = alpha_l1
         self._alpha_l2 = alpha_l2
         self._tol = tol
         self._coef = None
 
-    def fit(self, X, y, offset=None, grad_corrections=None, sample_weights=None):
+    def fit(self, X, y, offsets=None, grad_corrections=None, sample_weights=None):
         n_samples, n_features = X.shape
+        
         y = y.reshape(-1, 1)
 
-        if offset is None:
-            offset = np.zeros((n_samples, 1))
-        offset = offset.reshape(-1, 1)
+        if offsets is None:
+            offsets = np.zeros((n_samples, 1))
+        offsets = offsets.reshape(-1, 1)
         if grad_corrections is None:
             grad_corrections = np.zeros((n_samples, 1))
         grad_corrections = grad_corrections.reshape(-1, 1)
@@ -28,8 +29,8 @@ class LogisticWithGradientCorrection():
         
         def loss_and_jac(extended_coef):
             coef = extended_coef[:n_features] - extended_coef[n_features:]
-            index = np.dot(X, coef.reshape(-1, 1))
-            y_pred = scipy.special.expit(index + offset)
+            index = X @ coef.reshape(-1, 1)
+            y_pred = scipy.special.expit(index + offsets)
             m_loss = - y * np.log(y_pred) - (1 - y) * np.log(1 - y_pred) + grad_corrections * index
             loss = np.mean(sample_weights * m_loss) + self._alpha_l1 * np.sum(extended_coef) + 0.5 * self._alpha_l2 * np.sum(extended_coef**2)
             moment = (y_pred - y + grad_corrections) * X
@@ -49,26 +50,22 @@ class LogisticWithGradientCorrection():
     def coef_(self):
         return self._coef
     
-    def predict_proba(self, X, offset=None):    
-        if offset is None:
-            offset = np.zeros((X.shape[0], 1))
-        offset = offset.reshape(-1, 1)
-        y_pred = scipy.special.expit(np.dot(X, self.coef_.reshape(-1, 1)) + offset)
+    def predict_proba(self, X, offsets=None):    
+        if offsets is None:
+            offsets = np.zeros((X.shape[0], 1))
+        offsets = offsets.reshape(-1, 1)
+        y_pred = scipy.special.expit( X @ self.coef_.reshape(-1, 1) + offsets)
         return np.concatenate((1 - y_pred, y_pred), axis=1)
     
-    def predict(self, X, offset=None):     
-        if offset is None:
-            offset = np.zeros((X.shape[0], 1))
-        offset = offset.reshape(-1, 1)
-        return scipy.special.expit(np.dot(X, self.coef_.reshape(-1, 1)) + offset) >= 0.5
-    
-    
-    def score(self, X, y_true):
-        from sklearn.metrics import roc_auc_score
-        return roc_auc_score(y_true, self.predict_proba(X)[:, 1].reshape(y_true.shape))
+    def predict(self, X, offsets=None):     
+        return self.predict_proba(X, offsets=offsets)[:, [1]] >= 0.5
 
-    def accuracy(self, X, y_true):
+    def score(self, X, y_true, offsets=None):
+        from sklearn.metrics import roc_auc_score
+        return roc_auc_score(y_true, self.predict_proba(X, offsets=offsets)[:, 1].reshape(y_true.shape))
+
+    def accuracy(self, X, y_true, offsets=None):
         from sklearn.metrics import accuracy_score
-        return accuracy_score(y_true, self.predict(X).reshape(y_true.shape))
+        return accuracy_score(y_true, self.predict(X, offsets=offsets).reshape(y_true.shape))
     
     

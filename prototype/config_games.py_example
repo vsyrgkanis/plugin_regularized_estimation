@@ -3,26 +3,10 @@ import numpy as np
 import games_one_player
 import metrics
 import plotting
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-plt.style.use('ggplot')
 
-def custom_plot_nonzero_param_histograms(param_estimates, metric_results, config):
-    for dgp_name, pdgp in param_estimates.items():
-        n_methods = len(list(pdgp.keys()))
-        n_params = config['dgp_opts']['kappa_gamma'] + 1
-        fig = plt.figure(figsize=(4 * n_params, 2 * n_methods))
-        for it, m_name in enumerate(pdgp.keys()):
-            for inner_it, i in enumerate(np.concatenate((np.arange(config['dgp_opts']['kappa_gamma']), [config['dgp_opts']['n_dim']]))):
-                plt.subplot(n_methods, n_params, it * n_params + inner_it + 1)
-                plt.hist(pdgp[m_name][:, i])
-                plt.title("{}[{}]. $\\mu$: {:.2f}, $\\sigma$: {:.2f}".format(m_name, i, np.mean(pdgp[m_name][:, i]), np.std(pdgp[m_name][:, i])))
-        plt.tight_layout()
-        plt.savefig(os.path.join(config['target_dir'], 'dist_dgp_{}_{}.png'.format(dgp_name, config['param_str'])), dpi=300)
-        plt.close()
-    return 
 
+def plot_non_zero_histograms(param_estimates, metric_results, config):
+    plotting.plot_subset_param_histograms(param_estimates, metric_results, config, np.concatenate((np.arange(config['dgp_opts']['kappa_gamma']), [config['dgp_opts']['n_dim']])))
 
 CONFIG = {
         "dgps": {
@@ -30,9 +14,9 @@ CONFIG = {
         },
         "dgp_opts": {
             'n_samples': 5000, # samples used for estimation
-            'n_dim': 20, # dimension of the feature space
+            'n_dim': 1000, # dimension of the feature space
             'sigma_x': 3.0, # variance of the features
-            'kappa_gamma': 10, # support size of the target parameter
+            'kappa_gamma': 1, # support size of the target parameter
             'kappa_gamma_aux': 10, # support size for opponent in stylized dgp
         },
         "methods": {
@@ -42,7 +26,7 @@ CONFIG = {
             "Ortho": games_one_player.two_stage_crossfit_orthogonal
         },
         "method_opts": {
-            'lambda_coef': 0.25, # coeficient in front of the asymptotic rate for regularization lambda
+            'lambda_coef': 0.5, # coeficient in front of the asymptotic rate for regularization lambda
             'n_splits': 3 # number of splits in each cross fitting
         },
         "metrics": {
@@ -50,7 +34,7 @@ CONFIG = {
             "$\\ell_1$ error": metrics.l1_error
         },
         "plots": {
-            "param_hist": custom_plot_nonzero_param_histograms,
+            "param_hist": plot_non_zero_histograms,
             "metrics": plotting.plot_metrics,
             "metric_comparisons": plotting.plot_metric_comparisons
         },
@@ -60,5 +44,5 @@ CONFIG = {
         },
         "proposed_method": "Ortho",
         "target_dir": "results_games",
-        "reload_results": False
+        "reload_results": True
     }

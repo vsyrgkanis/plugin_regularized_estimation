@@ -2,7 +2,7 @@ import numpy as np
 from sklearn.model_selection import KFold
 from sklearn.linear_model import LogisticRegression
 from sklearn.linear_model import Lasso
-from scipy_logistic_with_offset import LogisticWithOffset
+from scipy_logistic_with_gradient_correction import LogisticWithOffsetAndGradientCorrection
 
 ###############################
 # DGPs
@@ -59,13 +59,12 @@ def direct_models(data, opts):
     # Run logistic lasso for outcome as function of composite treatments and controls
     comp_x = np.concatenate((z * t, x), axis=1)
     l1_reg = opts['lambda_coef'] * np.sqrt(np.log(comp_x.shape[1])/n_samples)
-    model_y = LogisticWithOffset(alpha_l1=l1_reg, 
-                                    alpha_l2=0., tol=1e-6)
+    model_y = LogisticWithOffsetAndGradientCorrection(alpha_l1=l1_reg, alpha_l2=0., tol=1e-6)
     model_y.fit(comp_x, y)
 
     return model_y, model_t
 
-def first_stage_estimates(x, t, z, y, tr_inds, tst_inds, opts):
+def nuisance_estimates(x, t, z, y, tr_inds, tst_inds, opts):
     comp_x = np.concatenate((z * t, x), axis=1)
     
     # Get direct regression models fitted on the training set
@@ -77,8 +76,6 @@ def first_stage_estimates(x, t, z, y, tr_inds, tst_inds, opts):
     theta_prel = model_y.coef_.flatten()[:z.shape[1]].reshape(-1, 1)
     # Preliminary estimate of f(u): \hat{f}(u) = u'alpha_prel
     alpha_prel = model_y.coef_.flatten()[z.shape[1]:].reshape(-1, 1)
-    # Preliminary estimate of h(u): \hat{h}(u) = u'beta_prel
-    beta_prel = model_t.coef_.flatten().reshape(-1, 1)
     # Preliminary estimate of \pi(u): \hat{\pi}(u) = model_t.predict(u)
     t_test_pred = model_t.predict(x[tst_inds]).reshape(-1, 1)
     # Preliminary estimate of G(x'\theta + f(u)): G_prel = model_y.predict([x, u])
@@ -112,20 +109,19 @@ def dml_crossfit(data, opts):
     # Build first stage nuisance estimates for each sample using cross-fitting
     kf = KFold(n_splits=opts['n_folds'])
     comp_res = np.zeros(z.shape)
-    offset = np.zeros((x.shape[0], 1))
+    offsets = np.zeros((x.shape[0], 1))
     V = np.zeros((x.shape[0], 1))
     for train_index, test_index in kf.split(x):
-        comp_res[test_index], offset[test_index], V[test_index] = first_stage_estimates(x, t, z, y, train_index, test_index, opts)
+        comp_res[test_index], offsets[test_index], V[test_index] = nuisance_estimates(x, t, z, y, train_index, test_index, opts)
     
     # Calculate normalized sample weights. Clipping for instability
     sample_weights = (1./np.clip(V, 0.01, 1))/np.mean((1./np.clip(V, 0.01, 1)))
 
     # Fit second stage regression with plugin nuisance estimates
-    l1_reg = np.sqrt(np.log(z.shape[1])/n_samples) #+ np.log(x.shape[1])*opts['kappa_x']**2/ ((1 - 1./opts['n_folds']) * n_samples)
-    model_final = LogisticWithOffset(alpha_l1=opts['lambda_coef'] * l1_reg, 
-                                    alpha_l2=0., tol=1e-6)
+    l1_reg = opts['lambda_coef'] * np.sqrt(np.log(z.shape[1])/n_samples)
+    model_final = LogisticWithOffsetAndGradientCorrection(alpha_l1=l1_reg, alpha_l2=0., tol=1e-6)
 
-    model_final.fit(comp_res, y, offset=offset, sample_weights=sample_weights)
+    model_final.fit(comp_res, y, offsets=offsets, sample_weights=sample_weights)
 
     return model_final.coef_.flatten()
 

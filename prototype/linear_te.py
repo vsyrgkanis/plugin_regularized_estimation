@@ -90,10 +90,9 @@ def dml_crossfit(data, opts):
     model_y = Lasso(alpha=opts['lambda_coef'] * np.sqrt(np.log(z.shape[1] * x.shape[1]) * 2. / n_samples))
     model_f = Lasso(alpha=opts['lambda_coef'] * np.sqrt(np.log(z.shape[1]) * 2. / n_samples), fit_intercept=False)
     
-    kf = KFold(n_splits=2)
     res_y = np.zeros(y.shape)
     res_t = np.zeros(t.shape)
-    for train_index, test_index in kf.split(x):
+    for train_index, test_index in KFold(n_splits=opts['n_folds']).split(x):
         model_t.fit(x[train_index], t[train_index].flatten())
         model_y.fit(comp_x[train_index], y[train_index].flatten())
         res_t[test_index] = t[test_index] - model_t.predict(x[test_index]).reshape(test_index.shape[0], -1)

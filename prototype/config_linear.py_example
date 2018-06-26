@@ -9,10 +9,10 @@ CONFIG = {
         },
         "dgp_opts": {
             'n_samples': 5000, # samples used for estimation
-            'dim_x': 40, # dimension of controls x
-            'dim_z': 40, # dimension of variables used for heterogeneity (subset of x)
+            'dim_x': 200, # dimension of controls x
+            'dim_z': 200, # dimension of variables used for heterogeneity (subset of x)
             'kappa_theta': 2, # support size of target parameter
-            'kappa_x': 15, # support size of nuisance
+            'kappa_x': 38, # support size of nuisance
             'sigma_eta': 1.0, # variance of error in secondary moment equation
             'sigma_epsilon': 1.0 # variance of error in primary moment equation
         },
@@ -22,7 +22,8 @@ CONFIG = {
             "CrossOrtho": linear_te.dml_crossfit
         },
         "method_opts": {
-            'lambda_coef': 1.0 # coeficient in front of the asymptotic rate for regularization lambda
+            'lambda_coef': 1.0, # coeficient in front of the asymptotic rate for regularization lambda
+            'n_folds': 3 # number of folds in crossfitting
         },
         "metrics": {
             "$\\ell_2$ error": metrics.l2_error,
