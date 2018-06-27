@@ -1,0 +1,49 @@
+import os
+import numpy as np
+import games
+from mcpy import metrics
+from mcpy import plotting
+
+
+def plot_non_zero_histograms(param_estimates, metric_results, config):
+    plotting.plot_subset_param_histograms(param_estimates, metric_results, config, np.concatenate((np.arange(config['dgp_opts']['kappa_gamma']), [config['dgp_opts']['n_dim']])))
+
+CONFIG = {
+        "dgps": {
+            "one_player": games.stylized_data,
+            "two_player": games.equilibrium_data
+        },
+        "dgp_opts": {
+            'n_samples': 10000, # samples used for estimation
+            'n_dim': 300, # dimension of the feature space
+            'sigma_x': 1.0, # variance of the features
+            'kappa_gamma': 1, # support size of the target parameter
+            'kappa_gamma_aux': 2, # support size for opponent in stylized dgp
+        },
+        "methods": {
+            "OracleLG": games.two_stage_oracle,
+            "2SLG": games.two_stage_non_orthogonal,
+            "2SLGNoSplit": games.two_stage_no_split,
+            "2SOrthoLG": games.two_stage_crossfit_orthogonal
+        },
+        "method_opts": {
+            'lambda_coef': 0.5, # coeficient in front of the asymptotic rate for regularization lambda
+            'n_splits': 3 # number of splits in each cross fitting
+        },
+        "metrics": {
+            "$\\ell_2$ error": metrics.l2_error,
+            "$\\ell_1$ error": metrics.l1_error
+        },
+        "plots": {
+            "param_hist": plot_non_zero_histograms,
+            "metrics": plotting.plot_metrics,
+            "metric_comparisons": plotting.plot_metric_comparisons
+        },
+        "mc_opts": {
+            'n_experiments': 100, # number of monte carlo experiments
+            "seed": 123
+        },
+        "proposed_method": "2SOrthoLG",
+        "target_dir": "results_games",
+        "reload_results": False
+    }
