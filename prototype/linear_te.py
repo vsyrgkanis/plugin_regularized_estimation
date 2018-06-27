@@ -2,11 +2,6 @@ import os
 import numpy as np
 from sklearn.model_selection import KFold
 from sklearn.linear_model import Lasso, MultiTaskLasso, MultiTaskLassoCV, LinearRegression
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-from joblib import Parallel, delayed
-import joblib
 from utils import cross_product
 
 ###############################
@@ -43,12 +38,14 @@ def gen_data(opts):
     alpha_x = np.random.uniform(1, 1, size=(kappa_x, 1))
     beta_x = np.random.uniform(1, 1, size=(kappa_x, 1))
     theta = np.random.uniform(1, 1, size=(kappa_theta, 1))
-    t = np.dot(x[:, support_x], beta_x) + np.random.normal(0, sigma_eta, size=(n_samples, 1))
-    y = np.dot(z[:, support_theta], theta) * t + np.dot(x[:, support_x], alpha_x) + np.random.normal(0, sigma_epsilon, size=(n_samples, 1))
+    t = np.matmul(x[:, support_x], beta_x) + np.random.normal(0, sigma_eta, size=(n_samples, 1))
+    y = np.matmul(z[:, support_theta], theta) * t + np.matmul(x[:, support_x], alpha_x) + np.random.normal(0, sigma_epsilon, size=(n_samples, 1))
 
     
     true_param = np.zeros(dim_z)
     true_param[support_theta] = theta.flatten()
+
+    print("done data generation")
     return (x, t, z, y), true_param
 
 ###############################
@@ -59,6 +56,7 @@ def direct_fit(data, opts):
     x, t, z, y = data
     model = Lasso(alpha=opts['lambda_coef'] * np.sqrt(np.log(z.shape[1] + x.shape[1])/x.shape[0]))
     model.fit(np.concatenate((z*t, x), axis=1), y.flatten())
+    print("done direct")
     return model.coef_.flatten()[:z.shape[1]]
 
 def dml_fit(data, opts):
@@ -77,6 +75,7 @@ def dml_fit(data, opts):
     res_t = t[n_samples//2:] - model_t.predict(x[n_samples//2:]).reshape((n_samples//2, -1))
     res_y = y[n_samples//2:] - model_y.predict(comp_x[n_samples//2:]).reshape((n_samples//2, -1))
     model_f.fit(z[n_samples//2:]*res_t, res_y.flatten())
+    print("done dml_fit")
     return model_f.coef_.flatten()
 
 def dml_crossfit(data, opts):
@@ -99,5 +98,6 @@ def dml_crossfit(data, opts):
         res_y[test_index] = y[test_index] - model_y.predict(comp_x[test_index]).reshape(test_index.shape[0], -1)
     
     model_f.fit(z*res_t, res_y.flatten())
+    print("done dml_crossfit")
     return model_f.coef_.flatten()
 

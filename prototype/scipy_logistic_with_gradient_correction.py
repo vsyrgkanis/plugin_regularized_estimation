@@ -29,7 +29,7 @@ class LogisticWithOffsetAndGradientCorrection():
         
         def loss_and_jac(extended_coef):
             coef = extended_coef[:n_features] - extended_coef[n_features:]
-            index = X @ coef.reshape(-1, 1)
+            index = np.matmul(X, coef.reshape(-1, 1))
             y_pred = scipy.special.expit(index + offsets)
             m_loss = - y * np.log(y_pred) - (1 - y) * np.log(1 - y_pred) + grad_corrections * index
             loss = np.mean(sample_weights * m_loss) + self._alpha_l1 * np.sum(extended_coef) + 0.5 * self._alpha_l2 * np.sum(extended_coef**2)
@@ -54,7 +54,7 @@ class LogisticWithOffsetAndGradientCorrection():
         if offsets is None:
             offsets = np.zeros((X.shape[0], 1))
         offsets = offsets.reshape(-1, 1)
-        y_pred = scipy.special.expit( X @ self.coef_.reshape(-1, 1) + offsets)
+        y_pred = scipy.special.expit( np.matmul(X, self.coef_.reshape(-1, 1)) + offsets)
         return np.concatenate((1 - y_pred, y_pred), axis=1)
     
     def predict(self, X, offsets=None):     

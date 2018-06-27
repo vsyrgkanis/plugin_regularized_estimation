@@ -31,7 +31,7 @@ BASE_CONFIG = {
         },
         "method_opts": {
             'lambda_coef': 1.0, # coeficient in front of the asymptotic rate for regularization lambda
-            'n_folds': 3 # number of folds in crossfitting
+            'n_folds': 2 # number of folds in crossfitting
         },
         "metrics": {
             "$\\ell_2$ error": metrics.l2_error,
@@ -50,7 +50,7 @@ BASE_CONFIG = {
         "reload_results": False
     }
 
-if __name__=="__main__":
+def main():
     kappa_grid = np.arange(1, 40, 3)
     
     if BASE_CONFIG['reload_results'] and os.path.exists(os.path.join(BASE_CONFIG['target_dir'], 'results_growing_kappa')):
@@ -78,3 +78,6 @@ if __name__=="__main__":
             plt.tight_layout()
             plt.savefig(os.path.join(BASE_CONFIG['target_dir'], '{}_dgp_{}_growing_kappa.png'.format(utils.filesafe(metric), dgp)), dpi=300)
             plt.close()
+
+if __name__=="__main__":
+    main()

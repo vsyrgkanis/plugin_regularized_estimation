@@ -51,9 +51,9 @@ def gen_data(opts):
     gamma = np.zeros(dim_z)
     gamma[support_z] = np.random.uniform(2, 3, size=kappa_z) / kappa_z
     
-    uz = cross_product(z, x) @ alpha + 2. * cross_product(z**2 - (sigma_x**2)/3., x) @ alpha2 
-    y = x @ theta + uz + np.random.normal(0, sigma_epsilon, size=n_samples)
-    index_d = x @ beta + z @ gamma
+    uz = np.matmul(cross_product(z, x), alpha) + 2. * np.matmul(cross_product(z**2 - (sigma_x**2)/3., x), alpha2)
+    y = np.matmul(x, theta) + uz + np.random.normal(0, sigma_epsilon, size=n_samples)
+    index_d = np.matmul(x, beta) + np.matmul(z, gamma)
     pz = scipy.special.expit(sigma_eta * index_d)
     d = np.random.binomial(1, pz)
     return (x, z, d, d*y, pz, uz), theta
@@ -89,7 +89,7 @@ def ortho_oracle(data, opts):
     l1_reg = 5. * opts['lambda_coef'] * np.sqrt(np.log(n_features)/n_samples)
     def loss_and_jac(extended_coef):
         coef = extended_coef[:n_features] - extended_coef[n_features:]
-        index = x @ coef
+        index = np.matmul(x, coef)
         m_loss = (d / pz) * .5 * (index - dy)**2 + hz * index
         loss = np.mean(m_loss) + l1_reg * np.sum(extended_coef)
         moment = ((d / pz) * (index - dy)).reshape(-1, 1) * x + hz.reshape(-1, 1) * x
@@ -145,7 +145,7 @@ def ortho(data, opts):
         model_uz = RandomForestRegressor(n_estimators=200, min_samples_leaf=20)
         model_uz.fit(comp_x[train_index][d[train_index]==1], dy[train_index][d[train_index]==1])
         uz[test_index] = model_uz.predict(comp_x[test_index])
-        uz[test_index] -= x[test_index] @ theta_prel
+        uz[test_index] -= np.matmul(x[test_index], theta_prel)
     # orthogonal correction multiplier of the index
     hz = uz * (d - pz) / pz
 
@@ -153,7 +153,7 @@ def ortho(data, opts):
     l1_reg = opts['lambda_coef'] * np.sqrt(np.log(n_features)/n_samples)
     def loss_and_jac(extended_coef):
         coef = extended_coef[:n_features] - extended_coef[n_features:]
-        index = x @ coef
+        index = np.matmul(x, coef)
         m_loss = (d / pz) * .5 * (index - dy)**2 + hz * index
         loss = np.mean(m_loss) + l1_reg * np.sum(extended_coef)
         moment = ((d / pz) * (index - dy)).reshape(-1, 1) * x + hz.reshape(-1, 1) * x
