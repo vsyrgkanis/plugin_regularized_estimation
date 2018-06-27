@@ -39,5 +39,5 @@ CONFIG = {
         },
         "proposed_method": "CrossOrtho",
         "target_dir": "results_linear",
-        "reload_results": True
+        "reload_results": False
     }

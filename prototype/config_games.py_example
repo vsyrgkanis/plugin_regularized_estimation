@@ -1,6 +1,6 @@
 import os
 import numpy as np
-import games_one_player
+import games
 import metrics
 import plotting
 
@@ -10,20 +10,21 @@ def plot_non_zero_histograms(param_estimates, metric_results, config):
 
 CONFIG = {
         "dgps": {
-            "one_player": games_one_player.gen_data
+            "one_player": games.stylized_data,
+            "two_player": games.equilibrium_data
         },
         "dgp_opts": {
-            'n_samples': 5000, # samples used for estimation
-            'n_dim': 1000, # dimension of the feature space
-            'sigma_x': 3.0, # variance of the features
+            'n_samples': 10000, # samples used for estimation
+            'n_dim': 300, # dimension of the feature space
+            'sigma_x': 1.0, # variance of the features
             'kappa_gamma': 1, # support size of the target parameter
-            'kappa_gamma_aux': 10, # support size for opponent in stylized dgp
+            'kappa_gamma_aux': 2, # support size for opponent in stylized dgp
         },
         "methods": {
-            "OracleLogistic": games_one_player.two_stage_oracle,
-            "2SLogistic": games_one_player.two_stage_non_orthogonal,
-            "2SLogisticNoSplit": games_one_player.two_stage_no_split,
-            "Ortho": games_one_player.two_stage_crossfit_orthogonal
+            "OracleLG": games.two_stage_oracle,
+            "2SLG": games.two_stage_non_orthogonal,
+            "2SLGNoSplit": games.two_stage_no_split,
+            "2SOrthoLG": games.two_stage_crossfit_orthogonal
         },
         "method_opts": {
             'lambda_coef': 0.5, # coeficient in front of the asymptotic rate for regularization lambda
@@ -42,7 +43,7 @@ CONFIG = {
             'n_experiments': 100, # number of monte carlo experiments
             "seed": 123
         },
-        "proposed_method": "Ortho",
+        "proposed_method": "2SOrthoLG",
         "target_dir": "results_games",
-        "reload_results": True
+        "reload_results": False
     }

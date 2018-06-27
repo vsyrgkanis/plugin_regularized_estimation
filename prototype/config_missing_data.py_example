@@ -43,5 +43,5 @@ CONFIG = {
         },
         "proposed_method": "Ortho",
         "target_dir": "results_missing",
-        "reload_results": True
+        "reload_results": False
     }
