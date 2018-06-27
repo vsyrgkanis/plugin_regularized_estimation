@@ -8,14 +8,14 @@ CONFIG = {
             "dgp1": missing_data.gen_data
         },
         "dgp_opts": {
-            'n_samples': 500, # samples used for estimation
+            'n_samples': 5000, # samples used for estimation
             'dim_x': 20, # dimension of controls x
             'dim_z': 20, # dimension of variables used for heterogeneity (subset of x)
             'kappa_theta': 1, # support size of target parameter
             'kappa_z': 1, # support size of nuisance
-            'sigma_epsilon': 1., # variance of error in secondary moment equation
-            'sigma_eta': .1, # variance of error in secondary moment equation, i.e. multiplier in logistic index
-            'sigma_x': 3 # variance parameter for co-variate distribution
+            'sigma_epsilon': 1.0, # variance of error in secondary moment equation
+            'sigma_eta': 0.1, # variance of error in secondary moment equation, i.e. multiplier in logistic index
+            'sigma_x': 3.0 # variance parameter for co-variate distribution
         },
         "methods": {
             "Direct": missing_data.direct_fit,
@@ -38,7 +38,7 @@ CONFIG = {
             "metric_comparisons": plotting.plot_metric_comparisons
         },
         "mc_opts": {
-            'n_experiments': 100, # number of monte carlo experiments
+            'n_experiments': 1000, # number of monte carlo experiments
             "seed": 123
         },
         "proposed_method": "Ortho",
