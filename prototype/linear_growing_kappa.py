@@ -17,8 +17,8 @@ BASE_CONFIG = {
         },
         "dgp_opts": {
             'n_samples': 5000, # samples used for estimation
-            'dim_x': 20, # dimension of controls x
-            'dim_z': 20, # dimension of variables used for heterogeneity (subset of x)
+            'dim_x': 200, # dimension of controls x
+            'dim_z': 200, # dimension of variables used for heterogeneity (subset of x)
             'kappa_theta': 2, # support size of target parameter
             'kappa_x': 1, # support size of nuisance
             'sigma_eta': 1.0, # variance of error in secondary moment equation
@@ -51,7 +51,7 @@ BASE_CONFIG = {
     }
 
 if __name__=="__main__":
-    kappa_grid = np.arange(1, 18, 3)
+    kappa_grid = np.arange(1, 40, 3)
     
     if BASE_CONFIG['reload_results'] and os.path.exists(os.path.join(BASE_CONFIG['target_dir'], 'results_growing_kappa')):
         metric_results_growing_kappa = joblib.load(os.path.exists(os.path.join(BASE_CONFIG['target_dir'], 'results_growing_kappa')))
