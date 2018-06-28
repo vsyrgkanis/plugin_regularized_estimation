@@ -7,7 +7,7 @@ from sklearn import linear_model, clone
 from sklearn.linear_model import LogisticRegression, SGDClassifier
 from sklearn.model_selection import StratifiedKFold, GridSearchCV, KFold
 from sklearn.neural_network import MLPClassifier
-from scipy_logistic_with_gradient_correction import LogisticWithOffsetAndGradientCorrection
+from orthopy.scipy_logistic_with_gradient_correction import LogisticWithOffsetAndGradientCorrection
 import scipy
 
 
@@ -108,7 +108,7 @@ def stylized_data(opts):
     sigma = np.zeros((n_samples, n_players))
     # Matrix of entry decisions for each feature vector
     sigma[:, 1] = scipy.special.expit(np.matmul(x_samples, gamma[1, :]))
-    sigma[:, 0] = scipy.special.expit(np.matul(x_samples, gamma[0, :]) + beta * sigma[:, 1])
+    sigma[:, 0] = scipy.special.expit(np.matmul(x_samples, gamma[0, :]) + beta * sigma[:, 1])
     # Draw sample of entry decisions from probabilities of entry
     y_samples = np.random.binomial(1, sigma[:, 0])
     y_samples_op = np.random.binomial(1, sigma[:, 1])

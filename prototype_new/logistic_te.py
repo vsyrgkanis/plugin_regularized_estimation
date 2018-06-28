@@ -1,8 +1,9 @@
 import numpy as np
+import scipy
 from sklearn.model_selection import KFold
 from sklearn.linear_model import LogisticRegression
 from sklearn.linear_model import Lasso
-from scipy_logistic_with_gradient_correction import LogisticWithOffsetAndGradientCorrection
+from orthopy.scipy_logistic_with_gradient_correction import LogisticWithOffsetAndGradientCorrection
 
 ###############################
 # DGPs
@@ -32,12 +33,12 @@ def gen_data(opts):
     support_theta = np.random.choice(np.arange(0, dim_z), kappa_theta, replace=False)
     support_x = np.random.choice(np.array(list(set(np.arange(0, dim_x)) - set(support_theta))), kappa_x - kappa_theta, replace=False)
     support_x = np.concatenate((support_x, support_theta), axis=0)
-    alpha_x = np.random.uniform(1, 1, size=(kappa_x, 1))
-    beta_x = np.random.uniform(1, 1, size=(kappa_x, 1))
-    theta = np.random.uniform(1, 1, size=(kappa_theta, 1))
-    t = np.dot(x[:, support_x], beta_x) + np.random.normal(0, sigma_eta, size=(n_samples, 1))
-    index_y = np.dot(z[:, support_theta], theta) * t + np.dot(x[:, support_x], alpha_x)
-    p_y = 1/(1+np.exp(-index_y))
+    alpha_x = np.ones((kappa_x, 1))
+    beta_x = np.ones((kappa_x, 1))
+    theta = np.ones((kappa_theta, 1))
+    t = np.matmul(x[:, support_x], beta_x) + np.random.normal(0, sigma_eta, size=(n_samples, 1))
+    index_y = np.matmul(z[:, support_theta], theta) * t + np.matmul(x[:, support_x], alpha_x)
+    p_y = scipy.special.expit(index_y)
     y = np.random.binomial(1, p_y)
 
     true_param = np.zeros(dim_z)

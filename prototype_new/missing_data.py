@@ -8,7 +8,7 @@ import scipy
 from scipy.optimize import fmin_l_bfgs_b
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import PolynomialFeatures
-from utils import cross_product
+from mcpy.utils import cross_product
 
 ###############################
 # DGPs
