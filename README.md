@@ -4,12 +4,27 @@ Code associated with paper: <i>Plug-in Regularized Estimation of High-Dimensiona
 
 # File Descriptions
 
-* For replicating the experiments with the linear heterogeneous treatment effect estimation, run the python script: `linear_te.py`
+* For replicating the experiments with the linear heterogeneous treatment effect estimation, run: `python linear_growing_kappa.py`
 
-* For replicating the experiments with the logistic heterogeneous treatment effect estimation, run the python script: `logistic_te.py`
+* For replicating the experiments with the logistic heterogeneous treatment effect estimation, run: 
+```{r, engine='bash'}
+cp config_logistic.py_example config_logistic.py
+python mc_from_config.py --config config_logistic
+```
 
-* For replicating the experiments related to estimation of conditional moment models with missing data, run the python script: `missing_data.py`
+* For replicating the experiments related to estimation of conditional moment models with missing data, run: 
+```{r, engine='bash', missing data experiments}
+cp config_missing_data.py_example config_missing_data.py
+python mc_from_config.py --config config_missing_data
+```
 
-* The jupyter notebooks `linear_te.ipynb` and `logistic_te.ipynb` contain example calls to library functions contained in the scripts above.
+* For replicating the experiments related to estimation in games of incomplete information, run: 
+```{r, engine='bash', games of incomplete information experiments}
+cp config_games.py_example config_games.py
+python mc_from_config.py --config config_games
+```
 
-* The file `logistic_with_offset.py` contains a class that corresponds to a tensorflow based implementation of the weighted logistic regression with index offsets and `l1` and `l2` regularization, required in the final stage of the orthogonal estimation of treatment effect models with a logistic link.
+* The library folder ```mcpy``` contains library code related to running generic monte carlo experiments from config files and saving and running the results
+
+* The library folder ```orthopy``` contains modifications to standard estimation methods, such as the logistic regression, that are required for orthogonal estimation, e.g. adding
+and orthogonal correction term to the loss or adding an offset to the index.
