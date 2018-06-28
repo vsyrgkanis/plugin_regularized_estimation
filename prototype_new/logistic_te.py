@@ -108,11 +108,10 @@ def dml_crossfit(data, opts):
     n_samples = x.shape[0]
     
     # Build first stage nuisance estimates for each sample using cross-fitting
-    kf = KFold(n_splits=opts['n_folds'])
     comp_res = np.zeros(z.shape)
     offsets = np.zeros((x.shape[0], 1))
     V = np.zeros((x.shape[0], 1))
-    for train_index, test_index in kf.split(x):
+    for train_index, test_index in KFold(n_splits=opts['n_folds']).split(x):
         comp_res[test_index], offsets[test_index], V[test_index] = nuisance_estimates(x, t, z, y, train_index, test_index, opts)
     
     # Calculate normalized sample weights. Clipping for instability

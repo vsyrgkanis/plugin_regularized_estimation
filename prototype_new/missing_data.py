@@ -86,7 +86,7 @@ def ortho_oracle(data, opts):
     n_samples, n_features = x.shape
     pz = true_pz
     hz = true_uz * (d - pz) / pz
-    l1_reg = 5. * opts['lambda_coef'] * np.sqrt(np.log(n_features)/n_samples)
+    l1_reg = opts['lambda_coef'] * np.sqrt(np.log(n_features)/n_samples)
     def loss_and_jac(extended_coef):
         coef = extended_coef[:n_features] - extended_coef[n_features:]
         index = np.matmul(x, coef)
@@ -110,9 +110,8 @@ def non_ortho(data, opts):
 
     # nuisance estimation
     comp_x = np.concatenate((x, z), axis=1)
-    kf = KFold(n_splits=opts['n_folds'])
     pz = np.zeros(n_samples)
-    for train_index, test_index in kf.split(x):        
+    for train_index, test_index in KFold(n_splits=opts['n_folds']).split(x):        
         pz[test_index] = LogisticRegressionCV(penalty='l1', solver='liblinear').fit(comp_x[train_index], d[train_index]).predict_proba(comp_x[test_index])[:, 1]
 
     # final regression
@@ -130,10 +129,9 @@ def ortho(data, opts):
     comp_x = np.concatenate((x, z), axis=1)
 
     # nuisance estimation
-    kf = KFold(n_splits=opts['n_folds'])
     pz = np.zeros(n_samples)
     uz = np.zeros(n_samples)
-    for train_index, test_index in kf.split(x):
+    for train_index, test_index in KFold(n_splits=opts['n_folds']).split(x):
         # propensity estimation
         model_p = LogisticRegressionCV(penalty='l1', solver='liblinear')
         model_p.fit(comp_x[train_index], d[train_index])
