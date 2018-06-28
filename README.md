@@ -11,11 +11,15 @@ Code assumes Python 3.6, but should also work with Python 2. It also requires ba
 python linear_growing_kappa.py
 ```
 
+The DGP and estimation methods for this application are contained in `linear_te.py`.
+
 * For replicating the experiments with the logistic heterogeneous treatment effect estimation, run: 
 ```{r, engine='bash'}
 cp config_logistic.py_example config_logistic.py
 python mc_from_config.py --config config_logistic
 ```
+
+The DGP and estimation methods for this application are contained in `logistic_te.py`.
 
 * For replicating the experiments related to estimation of conditional moment models with missing data, run: 
 ```{r, engine='bash', missing data experiments}
@@ -23,11 +27,15 @@ cp config_missing_data.py_example config_missing_data.py
 python mc_from_config.py --config config_missing_data
 ```
 
+The DGP and estimation methods for this application are contained in `missing_data.py`.
+
 * For replicating the experiments related to estimation in games of incomplete information, run: 
 ```{r, engine='bash', games of incomplete information experiments}
 cp config_games.py_example config_games.py
 python mc_from_config.py --config config_games
 ```
+
+The DGP and estimation methods for this application are contained in `games.py`.
 
 * The library folder ```mcpy``` contains library code related to running generic monte carlo experiments from config files and saving and running the results
 
