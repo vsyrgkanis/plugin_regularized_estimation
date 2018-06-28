@@ -146,13 +146,6 @@ def two_stage_oracle(data, opts):
     est = second_stage_logistic(X, y, sigma[:, [1]], opts)
     return est.coef_.flatten()
 
-def two_stage_no_split(data, opts):
-    X, y, y_op, _ = data
-    est = first_stage_sigma(X, y_op, opts)
-    sigma_hat_op = est.predict_proba(X)[:, [1]]
-    final_est = second_stage_logistic(X, y, sigma_hat_op, opts)
-    return final_est.coef_.flatten()
-
 def two_stage_non_orthogonal(data, opts):
     X, y, y_op, _ = data
     n_samples = X.shape[0]
@@ -183,7 +176,5 @@ def two_stage_crossfit_orthogonal(data, opts):
     l1_reg = opts['lambda_coef'] * np.sqrt(np.log(n_dim + 1)/(n_samples))
     estimator = LogisticWithOffsetAndGradientCorrection(alpha_l1=l1_reg, alpha_l2=0., tol=1e-6)
     estimator.fit(np.concatenate((X, sigma_hat_op), axis=1), y, grad_corrections=grad_corrections)
-    print("Max correction: {}".format(np.linalg.norm(grad_corrections.flatten(), ord=np.inf)))
 
     return estimator.coef_.flatten()
-

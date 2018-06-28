@@ -1,4 +1,3 @@
-import os
 import numpy as np
 import games
 from mcpy import metrics
@@ -15,15 +14,14 @@ CONFIG = {
         },
         "dgp_opts": {
             'n_samples': 10000, # samples used for estimation
-            'n_dim': 300, # dimension of the feature space
+            'n_dim': 1000, # dimension of the feature space
             'sigma_x': 1.0, # variance of the features
             'kappa_gamma': 1, # support size of the target parameter
-            'kappa_gamma_aux': 2, # support size for opponent in stylized dgp
+            'kappa_gamma_aux': 3, # support size for opponent in stylized dgp
         },
         "methods": {
             "OracleLG": games.two_stage_oracle,
             "2SLG": games.two_stage_non_orthogonal,
-            "2SLGNoSplit": games.two_stage_no_split,
             "2SOrthoLG": games.two_stage_crossfit_orthogonal
         },
         "method_opts": {
