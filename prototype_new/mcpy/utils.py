@@ -9,4 +9,4 @@ def cross_product(X1, X2):
 
 
 def filesafe(str):
-    return "".join([c for c in str if c.isalpha() or c.isdigit() or c==' ']).rstrip()
+    return "".join([c for c in str if c.isalpha() or c.isdigit() or c==' ']).rstrip().replace(' ', '_')
