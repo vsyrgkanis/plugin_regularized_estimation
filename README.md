@@ -2,9 +2,14 @@
 
 Code associated with paper: <i>Plug-in Regularized Estimation of High-Dimensional Parameters in Nonlinear Semiparametric Models</i>, <b>Chernozhukov, Nekipelov, Semenova, Syrgkanis</b>, 2018
 
+Code assumes Python 3.6, but should also work with Python 2.
+
 # File Descriptions
 
 * For replicating the experiments with the linear heterogeneous treatment effect estimation, run: `python linear_growing_kappa.py`
+```{r, engine='bash'}
+python linear_growing_kappa.py
+```
 
 * For replicating the experiments with the logistic heterogeneous treatment effect estimation, run: 
 ```{r, engine='bash'}
