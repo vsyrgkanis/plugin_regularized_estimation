@@ -126,37 +126,59 @@ def sweep_plot_marginal_metric_comparisons(sweep_keys, sweep_params, sweep_metri
                 plt.close()
 
 
+def _select_config_keys(sweep_keys, select_vals, filter_vals):
+    if select_vals is not None:
+        mask_select = [all(any((p, v) in key for v in vlist) for p, vlist in select_vals.items()) for key in sweep_keys]
+    else:
+        mask_select = [True]*len(sweep_keys)
+    if filter_vals is not None:
+        mask_filter = [all(all((p, v) not in key for v in vlist) for p, vlist in filter_vals.items()) for key in sweep_keys]
+    else :
+        mask_filter = [True]*len(sweep_keys)
+    mask = [ms and mf for ms, mf in zip(mask_select, mask_filter)]
+    return mask
 
-def sweep_plot_pairwise_marginal_metrics(sweep_keys, sweep_params, sweep_metrics, config):
+def sweep_plot_pairwise_marginal_metrics(sweep_keys, sweep_params, sweep_metrics, config, param_subset=None, select_vals=None, filter_vals=None):
     sweeps = {}
     for dgp_key, dgp_val in config['dgp_opts'].items():
         if hasattr(dgp_val, "__len__"):
             sweeps[dgp_key] = dgp_val
+    
+    mask = _select_config_keys(sweep_keys, select_vals, filter_vals)
+    if np.sum(mask) == 0:
+        print("Filtering resulted in no valid configurations!")
+        return 
 
     for dgp in config['dgps'].keys():
         for metric in config['metrics'].keys():
             for param1, param2 in itertools.combinations(sweeps.keys(), 2):
+                if param_subset is not None and (param1, param2) not in param_subset:
+                    continue
                 x, y, z = [], [], []
                 for method_it, method in enumerate(config['methods'].keys()):
                     x.append([]), y.append([]), z.append([])
                     for val1, val2 in itertools.product(*[sweeps[param1], sweeps[param2]]):
-                        grouped_results = np.concatenate([metrics[dgp][method][metric] for key, metrics 
-                                        in zip(sweep_keys, sweep_metrics) 
-                                        if (param1, val1) in key and (param2, val2) in key])
-                        x[method_it].append(val1)
-                        y[method_it].append(val2)
-                        z[method_it].append(np.median(grouped_results))
+                        subset = [metrics[dgp][method][metric] for key, metrics, ms
+                                        in zip(sweep_keys, sweep_metrics, mask) 
+                                        if (param1, val1) in key and (param2, val2) in key and ms]
+                        if len(subset) > 0:
+                            grouped_results = np.concatenate(subset)
+                            x[method_it].append(val1)
+                            y[method_it].append(val2)
+                            z[method_it].append(np.median(grouped_results))
                 vmin = np.min(z)
                 vmax = np.max(z)
-                xi = np.linspace(np.min(sweeps[param1]), np.max(sweeps[param1]), 5*len(sweeps[param1]))
-                yi = np.linspace(np.min(sweeps[param2]), np.max(sweeps[param2]), 5*len(sweeps[param2]))
-
                 fig, axes = plt.subplots(nrows=1, ncols=len(config['methods']), figsize=(4 * len(config['methods']), 3))
-                for method_it, (method, ax) in enumerate(zip(config['methods'].keys(), axes.flat)):
+                if not hasattr(axes, '__len__'):
+                    axes = [axes]
+                for method_it, (method, ax) in enumerate(zip(config['methods'].keys(), axes)):
+                    xi = np.linspace(np.min(x[method_it]), np.max(x[method_it]), 5*len(x[method_it]))
+                    yi = np.linspace(np.min(y[method_it]), np.max(y[method_it]), 5*len(y[method_it]))
                     zi = griddata(np.array(x[method_it]), np.array(y[method_it]), np.array(z[method_it]), xi, yi, interp='linear')
                     ax.contour(xi, yi, zi, 15, linewidths=0.2, colors='k')
                     im = ax.pcolormesh(xi, yi, zi, cmap=plt.cm.Reds, vmin=vmin, vmax=vmax)
                     ax.contourf(xi, yi, zi, 15, cmap=plt.cm.Reds, vmin=vmin, vmax=vmax)
+                    ax.scatter(np.array(x[method_it]), np.array(y[method_it]), alpha=0.5, s=3, c='b')
                     ax.set_xlabel(param1)
                     ax.set_ylabel(param2)
                     ax.set_title(method)
@@ -170,36 +192,47 @@ def sweep_plot_pairwise_marginal_metrics(sweep_keys, sweep_params, sweep_metrics
                 plt.close()
 
 
-def sweep_plot_pairwise_marginal_metric_comparisons(sweep_keys, sweep_params, sweep_metrics, config):
+def sweep_plot_pairwise_marginal_metric_comparisons(sweep_keys, sweep_params, sweep_metrics, config, param_subset=None, select_vals=None, filter_vals=None):
     sweeps = {}
     for dgp_key, dgp_val in config['dgp_opts'].items():
         if hasattr(dgp_val, "__len__"):
             sweeps[dgp_key] = dgp_val
 
+    mask = _select_config_keys(sweep_keys, select_vals, filter_vals)
+    if np.sum(mask) == 0:
+        print("Filtering resulted in no valid configurations!")
+        return 
+
     for dgp in config['dgps'].keys():
         for metric in config['metrics'].keys():
             for param1, param2 in itertools.combinations(sweeps.keys(), 2):
+                if param_subset is not None and (param1, param2) not in param_subset:
+                    continue
                 x, y, z = [], [], []
                 for method_it, method in enumerate((m for m in config['methods'].keys() if m !=config['proposed_method'])):
                     x.append([]), y.append([]), z.append([])
                     for val1, val2 in itertools.product(*[sweeps[param1], sweeps[param2]]):
-                        grouped_results = np.concatenate([metrics[dgp][method][metric] - metrics[dgp][config['proposed_method']][metric] for key, metrics 
-                                        in zip(sweep_keys, sweep_metrics)
-                                        if (param1, val1) in key and (param2, val2) in key])
-                        x[method_it].append(val1)
-                        y[method_it].append(val2)
-                        z[method_it].append(np.median(grouped_results))
+                        subset = [metrics[dgp][method][metric] - metrics[dgp][config['proposed_method']][metric] for key, metrics, ms
+                                        in zip(sweep_keys, sweep_metrics, mask) 
+                                        if (param1, val1) in key and (param2, val2) in key and ms]
+                        if len(subset) > 0:
+                            grouped_results = np.concatenate(subset)
+                            x[method_it].append(val1)
+                            y[method_it].append(val2)
+                            z[method_it].append(np.median(grouped_results))
                 vmin = np.min(z)
                 vmax = np.max(z)
-                xi = np.linspace(np.min(sweeps[param1]), np.max(sweeps[param1]), 5*len(sweeps[param1]))
-                yi = np.linspace(np.min(sweeps[param2]), np.max(sweeps[param2]), 5*len(sweeps[param2]))
-
                 fig, axes = plt.subplots(nrows=1, ncols=len(config['methods']) - 1, figsize=(4 * (len(config['methods']) - 1), 3))
-                for method_it, (method, ax) in enumerate(zip((m for m in config['methods'].keys() if m !=config['proposed_method']), axes.flat)):
+                if not hasattr(axes, '__len__'):
+                    axes = [axes]
+                for method_it, (method, ax) in enumerate(zip((m for m in config['methods'].keys() if m !=config['proposed_method']), axes)):
+                    xi = np.linspace(np.min(x[method_it]), np.max(x[method_it]), 5*len(x[method_it]))
+                    yi = np.linspace(np.min(y[method_it]), np.max(y[method_it]), 5*len(y[method_it]))
                     zi = griddata(np.array(x[method_it]), np.array(y[method_it]), np.array(z[method_it]), xi, yi, interp='linear')
                     ax.contour(xi, yi, zi, 15, linewidths=0.2, colors='k')
                     im = ax.pcolormesh(xi, yi, zi, cmap=plt.cm.Reds, vmin=vmin, vmax=vmax)
                     ax.contourf(xi, yi, zi, 15, cmap=plt.cm.Reds, vmin=vmin, vmax=vmax)
+                    ax.scatter(np.array(x[method_it]), np.array(y[method_it]), alpha=0.5, s=3, c='b')
                     ax.set_xlabel(param1)
                     ax.set_ylabel(param2)
                     ax.set_title(method)
@@ -211,3 +244,4 @@ def sweep_plot_pairwise_marginal_metric_comparisons(sweep_keys, sweep_params, sw
                 cbar.ax.set_ylabel('median decrease in {}'.format(metric))
                 plt.savefig(os.path.join(config['target_dir'], '{}_decrease_dgp_{}_growing_{}_and_{}_{}.png'.format(filesafe(metric), dgp, filesafe(param1), filesafe(param2), config['param_str'])), dpi=300)
                 plt.close()
+

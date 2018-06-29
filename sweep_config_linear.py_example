@@ -5,6 +5,14 @@ from mcpy import metrics
 from mcpy import plotting
 from mcpy import utils
 
+
+def select_plotting(x, y, z, w):
+    plotting.sweep_plot_pairwise_marginal_metrics(x, y, z, w, param_subset=[('$k_g$', '$\\sigma_\\eta$')],
+                                                    select_vals={'$\\sigma_\\eta$': [2.0]}, filter_vals={'$\\sigma_\\epsilon$':[2.0, 3.0]})
+    plotting.sweep_plot_pairwise_marginal_metric_comparisons(x, y, z, w, param_subset=[('$k_g$', '$\\sigma_\\eta$')],
+                                                    select_vals={'$\\sigma_\\eta$': [2.0]}, filter_vals={'$\\sigma_\\epsilon$':[2.0, 3.0]})
+
+
 CONFIG = {
         "dgps": {
             "dgp1": linear_te.gen_data
@@ -36,7 +44,8 @@ CONFIG = {
             "metrics": plotting.sweep_plot_marginal_metrics,
             "2dmetrics": plotting.sweep_plot_pairwise_marginal_metrics,
             "metric_comps": plotting.sweep_plot_marginal_metric_comparisons,
-            "2dmetric_comps": plotting.sweep_plot_pairwise_marginal_metric_comparisons
+            "2dmetric_comps": plotting.sweep_plot_pairwise_marginal_metric_comparisons,
+            "select_plots": select_plotting
         },
         "mc_opts": {
             'n_experiments': 100, # number of monte carlo experiments
