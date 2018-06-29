@@ -136,7 +136,6 @@ def sweep_plot_pairwise_marginal_metrics(sweep_keys, sweep_params, sweep_metrics
     for dgp in config['dgps'].keys():
         for metric in config['metrics'].keys():
             for param1, param2 in itertools.combinations(sweeps.keys(), 2):
-                print(param1, param2)
                 x, y, z = [], [], []
                 for method_it, method in enumerate(config['methods'].keys()):
                     x.append([]), y.append([]), z.append([])
@@ -180,7 +179,6 @@ def sweep_plot_pairwise_marginal_metric_comparisons(sweep_keys, sweep_params, sw
     for dgp in config['dgps'].keys():
         for metric in config['metrics'].keys():
             for param1, param2 in itertools.combinations(sweeps.keys(), 2):
-                print(param1, param2)
                 x, y, z = [], [], []
                 for method_it, method in enumerate((m for m in config['methods'].keys() if m !=config['proposed_method'])):
                     x.append([]), y.append([]), z.append([])

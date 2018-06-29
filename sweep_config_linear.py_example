@@ -11,7 +11,7 @@ CONFIG = {
         },
         "dgp_opts": {
             '$n$': 5000, # samples used for estimation
-            '$p$': 50, # dimension of controls x
+            '$p$': 100, # dimension of controls x
             '$k_\\theta$': 1, # support size of target parameter
             '$k_g$': np.arange(1, 40, 3), # support size of nuisance
             '$\\sigma_\\eta$': [1.0, 2.0, 3.0],  # variance of error in secondary moment equation
