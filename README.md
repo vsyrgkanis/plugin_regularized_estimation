@@ -8,7 +8,8 @@ Code assumes Python 3.6, but should also work with Python 2. It also requires ba
 
 * For replicating the experiments with the linear heterogeneous treatment effect estimation, run:
 ```{r, engine='bash'}
-python linear_growing_kappa.py
+cp sweep_config_linear.py_example sweep_config_linear.py
+python sweep_mc_from_config.py --config sweep_config_linear
 ```
 The DGP and estimation methods for this application are contained in `linear_te.py`.
 
