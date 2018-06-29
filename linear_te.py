@@ -10,39 +10,34 @@ from mcpy.utils import cross_product
 
 def gen_data(opts):
     """ Generate data from:
-    y = <z[support_theta], theta> * t + <x[support_x], alpha_x> + epsilon
-    t = <x[support_x], beta_x> + eta
+    y = <x[support_theta], theta> * t + <x[support_x], alpha> + epsilon
+    t = <x[support_x], beta> + eta
     epsilon ~ Normal(0, sigma_epsilon)
     eta ~ Normal(0, sigma_eta)
-    z = x[subset_z] for some subset of x of size dim_z
-    alpha_x, beta_x, theta are all equal to 1
-    support_x, support_theta, subset_z drawn uniformly at random
+    alpha, beta, theta are all equal to 1
+    support_x, support_theta drawn uniformly at random
     """
     n_samples = opts['n_samples']
     dim_x = opts['dim_x']
-    dim_z = opts['dim_z']
     kappa_x = opts['kappa_x']
     kappa_theta = opts['kappa_theta']
     sigma_eta = opts['sigma_eta']
     sigma_epsilon = opts['sigma_epsilon']
 
-    x = np.random.normal(0, 1, size=(n_samples, dim_x))
-    if dim_z == 1:
-        z = np.ones((n_samples, 1))
-    else:
-        supp_z = np.random.choice(np.arange(x.shape[1]), dim_z-1, replace=False)
-        z = np.concatenate((x[:, supp_z].reshape(n_samples, -1), np.ones((n_samples, 1))), axis=1)
-        
+    # instance
     support_x = np.random.choice(np.arange(0, dim_x), kappa_x, replace=False)
-    support_theta = np.random.choice(np.arange(0, dim_z), kappa_theta, replace=False)
-    alpha_x = np.random.uniform(1, 1, size=(kappa_x, 1))
-    beta_x = np.random.uniform(1, 1, size=(kappa_x, 1))
-    theta = np.random.uniform(1, 1, size=(kappa_theta, 1))
-    t = np.matmul(x[:, support_x], beta_x) + np.random.normal(0, sigma_eta, size=(n_samples, 1))
-    y = np.matmul(z[:, support_theta], theta) * t + np.matmul(x[:, support_x], alpha_x) + np.random.normal(0, sigma_epsilon, size=(n_samples, 1))
+    support_theta = np.random.choice(np.arange(0, dim_x + 1), kappa_theta, replace=False)
+    alpha = np.ones((kappa_x, 1))
+    beta = np.ones((kappa_x, 1))
+    theta = np.ones((kappa_theta, 1))
 
-    
-    true_param = np.zeros(dim_z)
+    # data sample
+    x = np.random.normal(0, 1, size=(n_samples, dim_x))
+    z = np.concatenate((x, np.ones((n_samples, 1))), axis=1)
+    t = np.matmul(x[:, support_x], beta) + np.random.normal(0, sigma_eta, size=(n_samples, 1))
+    y = np.matmul(z[:, support_theta], theta) * t + np.matmul(x[:, support_x], alpha) + np.random.normal(0, sigma_epsilon, size=(n_samples, 1))
+
+    true_param = np.zeros(dim_x + 1)
     true_param[support_theta] = theta.flatten()
 
     return (x, t, z, y), true_param
