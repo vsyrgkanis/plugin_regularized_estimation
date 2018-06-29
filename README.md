@@ -6,35 +6,40 @@ Code assumes Python 3.6, but should also work with Python 2. It also requires ba
 
 # File Descriptions
 
-* For replicating the experiments with the linear heterogeneous treatment effect estimation, run:
+## Linear Heterogeneous Treatment Effects
+For replicating the experiments with the linear heterogeneous treatment effect estimation, run:
 ```{r, engine='bash'}
 cp sweep_config_linear.py_example sweep_config_linear.py
 python sweep_mc_from_config.py --config sweep_config_linear
 ```
 The DGP and estimation methods for this application are contained in `linear_te.py`.
 
-* For replicating the experiments with the logistic heterogeneous treatment effect estimation, run: 
+## Heterogeneous Treatment Effects with a Logistic Link
+For replicating the experiments with the logistic heterogeneous treatment effect estimation, run: 
 ```{r, engine='bash'}
 cp config_logistic.py_example config_logistic.py
 python mc_from_config.py --config config_logistic
 ```
 The DGP and estimation methods for this application are contained in `logistic_te.py`.
 
-* For replicating the experiments related to estimation of conditional moment models with missing data, run: 
+## Conditional Moment Models with Missing Data
+For replicating the experiments related to estimation of conditional moment models with missing data, run: 
 ```{r, engine='bash', missing data experiments}
 cp config_missing_data.py_example config_missing_data.py
 python mc_from_config.py --config config_missing_data
 ```
 The DGP and estimation methods for this application are contained in `missing_data.py`.
 
-* For replicating the experiments related to estimation in games of incomplete information, run: 
+## Games of Incomplete Information
+For replicating the experiments related to estimation in games of incomplete information, run: 
 ```{r, engine='bash', games of incomplete information experiments}
 cp config_games.py_example config_games.py
 python mc_from_config.py --config config_games
 ```
 The DGP and estimation methods for this application are contained in `games.py`.
 
-* The library folder ```mcpy``` contains library code related to running generic monte carlo experiments from config files and saving and running the results. 
+## MCPY library
+The library folder ```mcpy``` contains library code related to running generic monte carlo experiments from config files and saving and running the results. 
 
 A simple config dictionary allows you to run monte carlo experiments for some configuration of the parameters of the dgp and the estimation methods and allows you to specify arbitrary methods to use to estimate for each 
 sample, arbitrary set of dgps to use to generate samples, arbitrary metrics to evaluate, and arbitrary plots to create from the experimental results. The monte carlo class will 
@@ -47,5 +52,6 @@ combination of parameters. Subsequently the plotting functions provided can for 
 over the settings of the rest of the parameters. Such plots are created for each dgp and metric, and each plot contains the results for each method. This is for instance used
 in the case of the linear treatment effect experiment.
 
-* The library folder ```orthopy``` contains modifications to standard estimation methods, such as the logistic regression, that are required for orthogonal estimation, e.g. adding
+## ORTHOPY library
+The library folder ```orthopy``` contains modifications to standard estimation methods, such as the logistic regression, that are required for orthogonal estimation, e.g. adding
 and orthogonal correction term to the loss or adding an offset to the index.
