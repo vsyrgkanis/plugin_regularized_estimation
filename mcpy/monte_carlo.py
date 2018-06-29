@@ -5,6 +5,10 @@ from joblib import Parallel, delayed
 import joblib
 import argparse
 import importlib
+from itertools import product
+import collections
+from copy import deepcopy
+from mcpy.utils import filesafe
 
 def _check_valid_config(config):
     assert 'dgps' in config, "config dict must contain dgps"
@@ -24,9 +28,9 @@ class MonteCarlo:
     def __init__(self, config):
         self.config = config
         _check_valid_config(self.config)
-        config['param_str'] = '_'.join(['{}_{}'.format(k, v) for k,v in self.config['mc_opts'].items()])
-        config['param_str'] += '_' + '_'.join(['{}_{}'.format(k, v) for k,v in self.config['dgp_opts'].items()])
-        config['param_str'] += '_' + '_'.join(['{}_{}'.format(k, v) for k,v in self.config['method_opts'].items()])
+        config['param_str'] = '_'.join(['{}_{}'.format(filesafe(k), v) for k,v in self.config['mc_opts'].items()])
+        config['param_str'] += '_' + '_'.join(['{}_{}'.format(filesafe(k), v) for k,v in self.config['dgp_opts'].items()])
+        config['param_str'] += '_' + '_'.join(['{}_{}'.format(filesafe(k), v) for k,v in self.config['method_opts'].items()])
         return
 
     def experiment(self, exp_id):
@@ -83,6 +87,51 @@ class MonteCarlo:
             plot_fn(param_estimates, metric_results, self.config)
 
         return param_estimates, metric_results
+
+class MonteCarloSweep:
+
+    def __init__(self, config):
+        self.config = config
+        _check_valid_config(self.config)
+        config['param_str'] = '_'.join(['{}_{}'.format(filesafe(k), self._stringify_param(v)) for k,v in self.config['mc_opts'].items()])
+        config['param_str'] += '_' + '_'.join(['{}_{}'.format(filesafe(k), self._stringify_param(v)) for k,v in self.config['dgp_opts'].items()])
+        config['param_str'] += '_' + '_'.join(['{}_{}'.format(filesafe(k), self._stringify_param(v)) for k,v in self.config['method_opts'].items()])
+        return 
+
+    def _stringify_param(self, param):
+        if hasattr(param, "__len__"):
+            return '{}_to_{}'.format(np.min(param), np.max(param))
+        else:
+            return param
+
+    def run(self):
+        dgp_sweep_params = []
+        dgp_sweep_param_vals = []
+        for dgp_key, dgp_val  in self.config['dgp_opts'].items():
+            if hasattr(dgp_val, "__len__"):
+                dgp_sweep_params.append(dgp_key)
+                dgp_sweep_param_vals.append(dgp_val)
+        
+        sweep_keys = []
+        sweep_params = []
+        sweep_metrics = []
+        inst_config = deepcopy(self.config)
+        for vec in product(*dgp_sweep_param_vals):
+            setting = list(zip(dgp_sweep_params, vec))
+            for k,v in setting:
+                inst_config['dgp_opts'][k] = v
+            params, metrics = MonteCarlo(inst_config).run()
+            sweep_keys.append(setting)
+            sweep_params.append(params)
+            sweep_metrics.append(metrics)
+        
+        for plot_key, plot_fn in self.config['sweep_plots'].items():
+            plot_fn(sweep_keys, sweep_params, sweep_metrics, self.config)
+
+        return sweep_keys, sweep_params, sweep_metrics
+
+
+
 
 
 def monte_carlo_main():

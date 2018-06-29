@@ -17,12 +17,12 @@ def gen_data(opts):
     alpha, beta, theta are all equal to 1
     support_x, support_theta drawn uniformly at random
     """
-    n_samples = opts['n_samples']
-    dim_x = opts['dim_x']
-    kappa_x = opts['kappa_x']
-    kappa_theta = opts['kappa_theta']
-    sigma_eta = opts['sigma_eta']
-    sigma_epsilon = opts['sigma_epsilon']
+    n_samples = opts['$n$']
+    dim_x = opts['$p$']
+    kappa_x = opts['$k_g$']
+    kappa_theta = opts['$k_\\theta$']
+    sigma_eta = opts['$\\sigma_\\eta$']
+    sigma_epsilon = opts['$\\sigma_\\epsilon$']
 
     # instance
     support_x = np.random.choice(np.arange(0, dim_x), kappa_x, replace=False)
