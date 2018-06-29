@@ -11,11 +11,11 @@ CONFIG = {
         },
         "dgp_opts": {
             '$n$': 5000, # samples used for estimation
-            '$p$': 200, # dimension of controls x
+            '$p$': 50, # dimension of controls x
             '$k_\\theta$': 1, # support size of target parameter
             '$k_g$': np.arange(1, 40, 3), # support size of nuisance
-            '$\\sigma_\\eta$': 1.0,  # variance of error in secondary moment equation
-            '$\\sigma_\\epsilon$': 1.0 # variance of error in primary moment equation
+            '$\\sigma_\\eta$': [1.0, 2.0, 3.0],  # variance of error in secondary moment equation
+            '$\\sigma_\\epsilon$': [1.0, 2.0, 3.0] # variance of error in primary moment equation
         },
         "methods": {
             "Direct": linear_te.direct_fit,
@@ -33,13 +33,16 @@ CONFIG = {
         "plots": {
         },
         "sweep_plots":{
-            "metrics": plotting.sweep_plot_all_marginal_metrics
+            "metrics": plotting.sweep_plot_marginal_metrics,
+            "2dmetrics": plotting.sweep_plot_pairwise_marginal_metrics,
+            "metric_comps": plotting.sweep_plot_marginal_metric_comparisons,
+            "2dmetric_comps": plotting.sweep_plot_pairwise_marginal_metric_comparisons
         },
         "mc_opts": {
             'n_experiments': 100, # number of monte carlo experiments
             "seed": 123
         },
         "proposed_method": "CrossOrtho",
-        "target_dir": "results_linear_growing",
-        "reload_results": False
+        "target_dir": "sweep_results",
+        "reload_results": True
     }
