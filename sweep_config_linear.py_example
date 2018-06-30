@@ -34,14 +34,8 @@ CONFIG = {
         },
         "sweep_plots":{
             "plot1": {'varying_params': ['$k_g$'], 'select_vals': {'$\\sigma_\\epsilon$': [1.0], '$\\sigma_\\eta$': [1.0]}, 'filter_vals': {}},
-            "plot1b": {'varying_params': ['$k_g$'], 'select_vals': {'$\\sigma_\\epsilon$': [2.0], '$\\sigma_\\eta$': [1.0]}, 'filter_vals': {}},
-            "plot1c": {'varying_params': ['$k_g$'], 'select_vals': {'$\\sigma_\\epsilon$': [3.0], '$\\sigma_\\eta$': [1.0]}, 'filter_vals': {}},
-            "plot1e": {'varying_params': ['$k_g$'], 'select_vals': {'$\\sigma_\\epsilon$': [1.0], '$\\sigma_\\eta$': [2.0]}, 'filter_vals': {}},
-            "plot1f": {'varying_params': ['$k_g$'], 'select_vals': {'$\\sigma_\\epsilon$': [1.0], '$\\sigma_\\eta$': [3.0]}, 'filter_vals': {}},
             "plot2": {'varying_params': [('$k_g$', '$\\sigma_\\eta$')], 'select_vals': {'$\\sigma_\\epsilon$':[1.0]}, 'filter_vals': {}},
-            "plot3": {'varying_params': [('$k_g$', '$\\sigma_\\eta$')], 'select_vals': {'$\\sigma_\\epsilon$':[3.0]}, 'filter_vals': {}},
-            "plot4": {'varying_params': [('$k_g$', '$\\sigma_\\epsilon$')], 'select_vals': {'$\\sigma_\\eta$':[1.0]}, 'filter_vals': {}},
-            "plot5": {'varying_params': [('$k_g$', '$\\sigma_\\epsilon$')], 'select_vals': {'$\\sigma_\\eta$':[3.0]}, 'filter_vals': {}}
+            "plot3": {'varying_params': [('$k_g$', '$\\sigma_\\epsilon$')], 'select_vals': {'$\\sigma_\\eta$':[1.0]}, 'filter_vals': {}}
         },
         "mc_opts": {
             'n_experiments': 100, # number of monte carlo experiments
