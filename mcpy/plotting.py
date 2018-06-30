@@ -19,7 +19,7 @@ def plot_subset_param_histograms(param_estimates, metric_results, config, subset
                 plt.hist(pdgp[m_name][:, i])
                 plt.title("{}[{}]. $\\mu$: {:.2f}, $\\sigma$: {:.2f}".format(m_name, i, np.mean(pdgp[m_name][:, i]), np.std(pdgp[m_name][:, i])))
         plt.tight_layout()
-        plt.savefig(os.path.join(config['target_dir'], 'dist_dgp_{}_{}.pdf'.format(dgp_name, config['param_str'])), dpi=300)
+        plt.savefig(os.path.join(config['target_dir'], 'dist_dgp_{}_{}.png'.format(dgp_name, config['param_str'])), dpi=300)
         plt.close()
     return 
 
@@ -34,7 +34,7 @@ def plot_param_histograms(param_estimates, metric_results, config):
                 plt.hist(pdgp[m_name][:, i])
                 plt.title("{}[{}]. $\\mu$: {:.2f}, $\\sigma$: {:.2f}".format(m_name, i, np.mean(pdgp[m_name][:, i]), np.std(pdgp[m_name][:, i])))
         plt.tight_layout()
-        plt.savefig(os.path.join(config['target_dir'], 'dist_dgp_{}_{}.pdf'.format(dgp_name, config['param_str'])), dpi=300)
+        plt.savefig(os.path.join(config['target_dir'], 'dist_dgp_{}_{}.png'.format(dgp_name, config['param_str'])), dpi=300)
         plt.close()
     return 
 
@@ -47,7 +47,7 @@ def plot_metrics(param_estimates, metric_results, config):
             plt.xticks(np.arange(1, n_methods + 1), list(mdgp.keys()))
             plt.ylabel(metric_name)
             plt.tight_layout()
-            plt.savefig(os.path.join(config['target_dir'], '{}_dgp_{}_{}.pdf'.format(filesafe(metric_name), dgp_name, config['param_str'])), dpi=300)
+            plt.savefig(os.path.join(config['target_dir'], '{}_dgp_{}_{}.png'.format(filesafe(metric_name), dgp_name, config['param_str'])), dpi=300)
             plt.close()
     return
 
@@ -60,7 +60,7 @@ def plot_metric_comparisons(param_estimates, metric_results, config):
             plt.xticks(np.arange(1, n_methods), [method_name for method_name in mdgp.keys() if method_name != config['proposed_method']])
             plt.ylabel('decrease in {}'.format(metric_name))
             plt.tight_layout()
-            plt.savefig(os.path.join(config['target_dir'], '{}_decrease_dgp_{}_{}.pdf'.format(filesafe(metric_name), dgp_name, config['param_str'])), dpi=300)
+            plt.savefig(os.path.join(config['target_dir'], '{}_decrease_dgp_{}_{}.png'.format(filesafe(metric_name), dgp_name, config['param_str'])), dpi=300)
             plt.close()
     return
 
@@ -113,7 +113,7 @@ def sweep_plot_marginal_transformed_metric(transform_fn, transform_name, method_
                 plt.xlabel(param)
                 plt.ylabel('{}({})'.format(transform_name, metric))
                 plt.tight_layout()
-                plt.savefig(os.path.join(config['target_dir'], '{}_{}_{}_dgp_{}_growing_{}_{}.pdf'.format(plot_name, filesafe(metric), transform_name, dgp, filesafe(param), config['param_str'])), dpi=300)
+                plt.savefig(os.path.join(config['target_dir'], '{}_{}_{}_dgp_{}_growing_{}_{}.png'.format(plot_name, filesafe(metric), transform_name, dgp, filesafe(param), config['param_str'])), dpi=300)
                 plt.close()
             
             for param1, param2 in itertools.combinations(sweeps.keys(), 2):
@@ -146,7 +146,7 @@ def sweep_plot_marginal_transformed_metric(transform_fn, transform_name, method_
                     ax.scatter(np.array(x[method_it]), np.array(y[method_it]), alpha=0.5, s=3, c='b')
                     ax.set_xlabel(param1)
                     ax.set_ylabel(param2)
-                    #ax.set_title(method)
+                    ax.set_title(method)
                 
                 plt.tight_layout()
                 fig.subplots_adjust(right=0.8)
@@ -154,7 +154,7 @@ def sweep_plot_marginal_transformed_metric(transform_fn, transform_name, method_
                 cbar = fig.colorbar(im, cax=cbar_ax)
                 cbar.ax.tick_params(labelsize=8)
                 cbar.ax.set_ylabel('median {}({})'.format(transform_name, metric))
-                plt.savefig(os.path.join(config['target_dir'], '{}_{}_{}_dgp_{}_growing_{}_and_{}_{}.pdf'.format(plot_name, filesafe(metric), transform_name, dgp, filesafe(param1), filesafe(param2), config['param_str'])), dpi=300)
+                plt.savefig(os.path.join(config['target_dir'], '{}_{}_{}_dgp_{}_growing_{}_and_{}_{}.png'.format(plot_name, filesafe(metric), transform_name, dgp, filesafe(param1), filesafe(param2), config['param_str'])), dpi=300)
                 plt.close()
 
 def sweep_plot_marginal_metrics(plot_name, sweep_keys, sweep_params, sweep_metrics, config, **kwargs):
