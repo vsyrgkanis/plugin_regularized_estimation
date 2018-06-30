@@ -64,67 +64,6 @@ def plot_metric_comparisons(param_estimates, metric_results, config):
             plt.close()
     return
 
-def sweep_plot_marginal_metrics(sweep_keys, sweep_params, sweep_metrics, config):
-    sweeps = {}
-    for dgp_key, dgp_val in config['dgp_opts'].items():
-        if hasattr(dgp_val, "__len__"):
-            sweeps[dgp_key] = dgp_val
-
-    for dgp in config['dgps'].keys():
-        for metric in config['metrics'].keys():
-            for param, param_vals in sweeps.items():
-                plt.figure(figsize=(5, 3))
-                for method in config['methods'].keys():
-                    medians = []
-                    mins = []
-                    maxs = []
-                    for val in param_vals:
-                        grouped_results = np.concatenate([metrics[dgp][method][metric] for key, metrics 
-                                        in zip(sweep_keys, sweep_metrics) 
-                                        if (param, val) in key])
-                        medians.append(np.median(grouped_results))
-                        mins.append(np.min(grouped_results))
-                        maxs.append(np.max(grouped_results))
-                    plt.plot(param_vals, medians, label=method)
-                    plt.fill_between(param_vals, maxs, mins, alpha=0.3)
-                plt.legend()
-                plt.xlabel(param)
-                plt.ylabel(metric)
-                plt.tight_layout()
-                plt.savefig(os.path.join(config['target_dir'], '{}_dgp_{}_growing_{}_{}.png'.format(filesafe(metric), dgp, filesafe(param), config['param_str'])), dpi=300)
-                plt.close()
-
-
-def sweep_plot_marginal_metric_comparisons(sweep_keys, sweep_params, sweep_metrics, config):
-    sweeps = {}
-    for dgp_key, dgp_val in config['dgp_opts'].items():
-        if hasattr(dgp_val, "__len__"):
-            sweeps[dgp_key] = dgp_val
-
-    for dgp in config['dgps'].keys():
-        for metric in config['metrics'].keys():
-            for param, param_vals in sweeps.items():
-                plt.figure(figsize=(5, 3))
-                for method in (m for m in config['methods'].keys() if m !=config['proposed_method']):
-                    medians = []
-                    mins = []
-                    maxs = []
-                    for val in param_vals:
-                        grouped_results = np.concatenate([metrics[dgp][method][metric] - metrics[dgp][config['proposed_method']][metric] for key, metrics 
-                                        in zip(sweep_keys, sweep_metrics) 
-                                        if (param, val) in key])
-                        medians.append(np.median(grouped_results))
-                        mins.append(np.min(grouped_results))
-                        maxs.append(np.max(grouped_results))
-                    plt.plot(param_vals, medians, label=method)
-                    plt.fill_between(param_vals, maxs, mins, alpha=0.3)
-                plt.legend()
-                plt.xlabel(param)
-                plt.ylabel('decrease in {}'.format(metric))
-                plt.tight_layout()
-                plt.savefig(os.path.join(config['target_dir'], '{}_decrease_dgp_{}_growing_{}_{}.png'.format(filesafe(metric), dgp, filesafe(param), config['param_str'])), dpi=300)
-                plt.close()
-
 
 def _select_config_keys(sweep_keys, select_vals, filter_vals):
     if select_vals is not None:
@@ -138,7 +77,7 @@ def _select_config_keys(sweep_keys, select_vals, filter_vals):
     mask = [ms and mf for ms, mf in zip(mask_select, mask_filter)]
     return mask
 
-def sweep_plot_pairwise_marginal_metrics(sweep_keys, sweep_params, sweep_metrics, config, param_subset=None, select_vals=None, filter_vals=None):
+def sweep_plot_marginal_metrics(plot_name, sweep_keys, sweep_params, sweep_metrics, config, param_subset=None, select_vals=None, filter_vals=None):
     sweeps = {}
     for dgp_key, dgp_val in config['dgp_opts'].items():
         if hasattr(dgp_val, "__len__"):
@@ -151,6 +90,32 @@ def sweep_plot_pairwise_marginal_metrics(sweep_keys, sweep_params, sweep_metrics
 
     for dgp in config['dgps'].keys():
         for metric in config['metrics'].keys():
+            for param, param_vals in sweeps.items():
+                if param_subset is not None and param not in param_subset:
+                    continue
+                plt.figure(figsize=(5, 3))
+                for method in config['methods'].keys():
+                    medians = []
+                    mins = []
+                    maxs = []
+                    for val in param_vals:
+                        subset = [metrics[dgp][method][metric] for key, metrics, ms
+                                        in zip(sweep_keys, sweep_metrics, mask) 
+                                        if (param, val) in key and ms]
+                        if len(subset) > 0:
+                            grouped_results = np.concatenate(subset)
+                            medians.append(np.median(grouped_results))
+                            mins.append(np.min(grouped_results))
+                            maxs.append(np.max(grouped_results))
+                    plt.plot(param_vals, medians, label=method)
+                    plt.fill_between(param_vals, maxs, mins, alpha=0.3)
+                plt.legend()
+                plt.xlabel(param)
+                plt.ylabel(metric)
+                plt.tight_layout()
+                plt.savefig(os.path.join(config['target_dir'], '{}_{}_dgp_{}_growing_{}_{}.png'.format(plot_name, filesafe(metric), dgp, filesafe(param), config['param_str'])), dpi=300)
+                plt.close()
+            
             for param1, param2 in itertools.combinations(sweeps.keys(), 2):
                 if param_subset is not None and (param1, param2) not in param_subset:
                     continue
@@ -188,11 +153,11 @@ def sweep_plot_pairwise_marginal_metrics(sweep_keys, sweep_params, sweep_metrics
                 cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.75])
                 cbar = fig.colorbar(im, cax=cbar_ax)
                 cbar.ax.set_ylabel('median {}'.format(metric))
-                plt.savefig(os.path.join(config['target_dir'], '{}_dgp_{}_growing_{}_and_{}_{}.png'.format(filesafe(metric), dgp, filesafe(param1), filesafe(param2), config['param_str'])), dpi=300)
+                plt.savefig(os.path.join(config['target_dir'], '{}_{}_dgp_{}_growing_{}_and_{}_{}.png'.format(plot_name, filesafe(metric), dgp, filesafe(param1), filesafe(param2), config['param_str'])), dpi=300)
                 plt.close()
 
 
-def sweep_plot_pairwise_marginal_metric_comparisons(sweep_keys, sweep_params, sweep_metrics, config, param_subset=None, select_vals=None, filter_vals=None):
+def sweep_plot_marginal_metric_comparisons(plot_name, sweep_keys, sweep_params, sweep_metrics, config, param_subset=None, select_vals=None, filter_vals=None):
     sweeps = {}
     for dgp_key, dgp_val in config['dgp_opts'].items():
         if hasattr(dgp_val, "__len__"):
@@ -205,6 +170,32 @@ def sweep_plot_pairwise_marginal_metric_comparisons(sweep_keys, sweep_params, sw
 
     for dgp in config['dgps'].keys():
         for metric in config['metrics'].keys():
+            for param, param_vals in sweeps.items():
+                if param_subset is not None and param not in param_subset:
+                    continue
+                plt.figure(figsize=(5, 3))
+                for method in (m for m in config['methods'].keys() if m !=config['proposed_method']):
+                    medians = []
+                    mins = []
+                    maxs = []
+                    for val in param_vals:
+                        subset = [metrics[dgp][method][metric] - metrics[dgp][config['proposed_method']][metric]  for key, metrics, ms
+                                        in zip(sweep_keys, sweep_metrics, mask) 
+                                        if (param, val) in key and ms]
+                        if len(subset) > 0:
+                            grouped_results = np.concatenate(subset)
+                            medians.append(np.median(grouped_results))
+                            mins.append(np.min(grouped_results))
+                            maxs.append(np.max(grouped_results))
+                    plt.plot(param_vals, medians, label=method)
+                    plt.fill_between(param_vals, maxs, mins, alpha=0.3)
+                plt.legend()
+                plt.xlabel(param)
+                plt.ylabel('decrease in {}'.format(metric))
+                plt.tight_layout()
+                plt.savefig(os.path.join(config['target_dir'], '{}_{}_decrease_dgp_{}_growing_{}_{}.png'.format(plot_name, filesafe(metric), dgp, filesafe(param), config['param_str'])), dpi=300)
+                plt.close()
+
             for param1, param2 in itertools.combinations(sweeps.keys(), 2):
                 if param_subset is not None and (param1, param2) not in param_subset:
                     continue
@@ -242,6 +233,6 @@ def sweep_plot_pairwise_marginal_metric_comparisons(sweep_keys, sweep_params, sw
                 cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.75])
                 cbar = fig.colorbar(im, cax=cbar_ax)
                 cbar.ax.set_ylabel('median decrease in {}'.format(metric))
-                plt.savefig(os.path.join(config['target_dir'], '{}_decrease_dgp_{}_growing_{}_and_{}_{}.png'.format(filesafe(metric), dgp, filesafe(param1), filesafe(param2), config['param_str'])), dpi=300)
+                plt.savefig(os.path.join(config['target_dir'], '{}_{}_decrease_dgp_{}_growing_{}_and_{}_{}.png'.format(plot_name, filesafe(metric), dgp, filesafe(param1), filesafe(param2), config['param_str'])), dpi=300)
                 plt.close()
 

@@ -5,14 +5,6 @@ from mcpy import metrics
 from mcpy import plotting
 from mcpy import utils
 
-
-def select_plotting(x, y, z, w):
-    plotting.sweep_plot_pairwise_marginal_metrics(x, y, z, w, param_subset=[('$k_g$', '$\\sigma_\\eta$')],
-                                                    select_vals={'$\\sigma_\\eta$': [2.0]}, filter_vals={'$\\sigma_\\epsilon$':[2.0, 3.0]})
-    plotting.sweep_plot_pairwise_marginal_metric_comparisons(x, y, z, w, param_subset=[('$k_g$', '$\\sigma_\\eta$')],
-                                                    select_vals={'$\\sigma_\\eta$': [2.0]}, filter_vals={'$\\sigma_\\epsilon$':[2.0, 3.0]})
-
-
 CONFIG = {
         "dgps": {
             "dgp1": linear_te.gen_data
@@ -22,8 +14,8 @@ CONFIG = {
             '$p$': 100, # dimension of controls x
             '$k_\\theta$': 1, # support size of target parameter
             '$k_g$': np.arange(1, 40, 3), # support size of nuisance
-            '$\\sigma_\\eta$': [1.0, 2.0, 3.0],  # variance of error in secondary moment equation
-            '$\\sigma_\\epsilon$': [1.0, 2.0, 3.0] # variance of error in primary moment equation
+            '$\\sigma_\\eta$': np.arange(1.0, 4.0),  # variance of error in secondary moment equation
+            '$\\sigma_\\epsilon$': np.arange(1.0, 4.0) # variance of error in primary moment equation
         },
         "methods": {
             "Direct": linear_te.direct_fit,
@@ -41,11 +33,16 @@ CONFIG = {
         "plots": {
         },
         "sweep_plots":{
-            "metrics": plotting.sweep_plot_marginal_metrics,
-            "2dmetrics": plotting.sweep_plot_pairwise_marginal_metrics,
-            "metric_comps": plotting.sweep_plot_marginal_metric_comparisons,
-            "2dmetric_comps": plotting.sweep_plot_pairwise_marginal_metric_comparisons,
-            "select_plots": select_plotting
+            "plot1": {'param_subset': ['$k_g$'], 'select_vals': {'$\\sigma_\\epsilon$': [1.0], '$\\sigma_\\eta$': [1.0]}, 'filter_vals': {}},
+            "plot1b": {'param_subset': ['$k_g$'], 'select_vals': {'$\\sigma_\\epsilon$': [2.0], '$\\sigma_\\eta$': [1.0]}, 'filter_vals': {}},
+            "plot1c": {'param_subset': ['$k_g$'], 'select_vals': {'$\\sigma_\\epsilon$': [3.0], '$\\sigma_\\eta$': [1.0]}, 'filter_vals': {}},
+            "plot1d": {'param_subset': ['$k_g$'], 'select_vals': {'$\\sigma_\\epsilon$': [1.0], '$\\sigma_\\eta$': [1.0]}, 'filter_vals': {}},
+            "plot1e": {'param_subset': ['$k_g$'], 'select_vals': {'$\\sigma_\\epsilon$': [1.0], '$\\sigma_\\eta$': [2.0]}, 'filter_vals': {}},
+            "plot1f": {'param_subset': ['$k_g$'], 'select_vals': {'$\\sigma_\\epsilon$': [1.0], '$\\sigma_\\eta$': [3.0]}, 'filter_vals': {}},
+            "plot2": {'param_subset': [('$k_g$', '$\\sigma_\\eta$')], 'select_vals': {'$\\sigma_\\epsilon$':[1.0]}, 'filter_vals': {}},
+            "plot3": {'param_subset': [('$k_g$', '$\\sigma_\\eta$')], 'select_vals': {'$\\sigma_\\epsilon$':[3.0]}, 'filter_vals': {}},
+            "plot4": {'param_subset': [('$k_g$', '$\\sigma_\\epsilon$')], 'select_vals': {'$\\sigma_\\eta$':[1.0]}, 'filter_vals': {}},
+            "plot5": {'param_subset': [('$k_g$', '$\\sigma_\\epsilon$')], 'select_vals': {'$\\sigma_\\eta$':[3.0]}, 'filter_vals': {}}
         },
         "mc_opts": {
             'n_experiments': 100, # number of monte carlo experiments

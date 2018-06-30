@@ -9,6 +9,7 @@ from itertools import product
 import collections
 from copy import deepcopy
 from mcpy.utils import filesafe
+from mcpy import plotting
 
 def _check_valid_config(config):
     assert 'dgps' in config, "config dict must contain dgps"
@@ -126,7 +127,17 @@ class MonteCarloSweep:
             sweep_metrics.append(metrics)
         
         for plot_key, plot_fn in self.config['sweep_plots'].items():
-            plot_fn(sweep_keys, sweep_params, sweep_metrics, self.config)
+            if isinstance(plot_fn, dict):
+                plotting.sweep_plot_marginal_metrics(plot_key, sweep_keys, sweep_params, sweep_metrics, self.config,
+                                                    param_subset=plot_fn['param_subset'],
+                                                    select_vals=plot_fn['select_vals'],
+                                                    filter_vals=plot_fn['filter_vals'])
+                plotting.sweep_plot_marginal_metric_comparisons(plot_key, sweep_keys, sweep_params, sweep_metrics, self.config,
+                                                    param_subset=plot_fn['param_subset'],
+                                                    select_vals=plot_fn['select_vals'],
+                                                    filter_vals=plot_fn['filter_vals'])
+            else:
+                plot_fn(plot_key, sweep_keys, sweep_params, sweep_metrics, self.config)
 
         return sweep_keys, sweep_params, sweep_metrics
 
