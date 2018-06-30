@@ -150,8 +150,9 @@ def sweep_plot_marginal_transformed_metric(transform_fn, transform_name, method_
                 
                 plt.tight_layout()
                 fig.subplots_adjust(right=0.8)
-                cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.75])
+                cbar_ax = fig.add_axes([0.81, 0.15, 0.02, 0.72])
                 cbar = fig.colorbar(im, cax=cbar_ax)
+                cbar.ax.tick_params(labelsize=8)
                 cbar.ax.set_ylabel('median {}({})'.format(transform_name, metric))
                 plt.savefig(os.path.join(config['target_dir'], '{}_{}_{}_dgp_{}_growing_{}_and_{}_{}.png'.format(plot_name, filesafe(metric), transform_name, dgp, filesafe(param1), filesafe(param2), config['param_str'])), dpi=300)
                 plt.close()
