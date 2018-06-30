@@ -77,7 +77,7 @@ def _select_config_keys(sweep_keys, select_vals, filter_vals):
     mask = [ms and mf for ms, mf in zip(mask_select, mask_filter)]
     return mask
 
-def sweep_plot_marginal_metrics(plot_name, sweep_keys, sweep_params, sweep_metrics, config, param_subset=None, select_vals=None, filter_vals=None):
+def sweep_plot_marginal_transformed_metric(transform_fn, transform_name, method_subset, plot_name, sweep_keys, sweep_params, sweep_metrics, config, param_subset=None, select_vals=None, filter_vals=None):
     sweeps = {}
     for dgp_key, dgp_val in config['dgp_opts'].items():
         if hasattr(dgp_val, "__len__"):
@@ -94,12 +94,12 @@ def sweep_plot_marginal_metrics(plot_name, sweep_keys, sweep_params, sweep_metri
                 if param_subset is not None and param not in param_subset:
                     continue
                 plt.figure(figsize=(5, 3))
-                for method in config['methods'].keys():
+                for method in method_subset:
                     medians = []
                     mins = []
                     maxs = []
                     for val in param_vals:
-                        subset = [metrics[dgp][method][metric] for key, metrics, ms
+                        subset = [transform_fn(metrics, dgp, method, metric) for key, metrics, ms
                                         in zip(sweep_keys, sweep_metrics, mask) 
                                         if (param, val) in key and ms]
                         if len(subset) > 0:
@@ -111,19 +111,19 @@ def sweep_plot_marginal_metrics(plot_name, sweep_keys, sweep_params, sweep_metri
                     plt.fill_between(param_vals, maxs, mins, alpha=0.3)
                 plt.legend()
                 plt.xlabel(param)
-                plt.ylabel(metric)
+                plt.ylabel('{}({})'.format(transform_name, metric))
                 plt.tight_layout()
-                plt.savefig(os.path.join(config['target_dir'], '{}_{}_dgp_{}_growing_{}_{}.png'.format(plot_name, filesafe(metric), dgp, filesafe(param), config['param_str'])), dpi=300)
+                plt.savefig(os.path.join(config['target_dir'], '{}_{}_{}_dgp_{}_growing_{}_{}.png'.format(plot_name, filesafe(metric), transform_name, dgp, filesafe(param), config['param_str'])), dpi=300)
                 plt.close()
             
             for param1, param2 in itertools.combinations(sweeps.keys(), 2):
                 if param_subset is not None and (param1, param2) not in param_subset:
                     continue
                 x, y, z = [], [], []
-                for method_it, method in enumerate(config['methods'].keys()):
+                for method_it, method in enumerate(method_subset):
                     x.append([]), y.append([]), z.append([])
                     for val1, val2 in itertools.product(*[sweeps[param1], sweeps[param2]]):
-                        subset = [metrics[dgp][method][metric] for key, metrics, ms
+                        subset = [transform_fn(metrics, dgp, method, metric) for key, metrics, ms
                                         in zip(sweep_keys, sweep_metrics, mask) 
                                         if (param1, val1) in key and (param2, val2) in key and ms]
                         if len(subset) > 0:
@@ -133,10 +133,10 @@ def sweep_plot_marginal_metrics(plot_name, sweep_keys, sweep_params, sweep_metri
                             z[method_it].append(np.median(grouped_results))
                 vmin = np.min(z)
                 vmax = np.max(z)
-                fig, axes = plt.subplots(nrows=1, ncols=len(config['methods']), figsize=(4 * len(config['methods']), 3))
+                fig, axes = plt.subplots(nrows=1, ncols=len(method_subset), figsize=(4 * len(method_subset), 3))
                 if not hasattr(axes, '__len__'):
                     axes = [axes]
-                for method_it, (method, ax) in enumerate(zip(config['methods'].keys(), axes)):
+                for method_it, (method, ax) in enumerate(zip(method_subset, axes)):
                     xi = np.linspace(np.min(x[method_it]), np.max(x[method_it]), 5*len(x[method_it]))
                     yi = np.linspace(np.min(y[method_it]), np.max(y[method_it]), 5*len(y[method_it]))
                     zi = griddata(np.array(x[method_it]), np.array(y[method_it]), np.array(z[method_it]), xi, yi, interp='linear')
@@ -152,87 +152,24 @@ def sweep_plot_marginal_metrics(plot_name, sweep_keys, sweep_params, sweep_metri
                 fig.subplots_adjust(right=0.8)
                 cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.75])
                 cbar = fig.colorbar(im, cax=cbar_ax)
-                cbar.ax.set_ylabel('median {}'.format(metric))
-                plt.savefig(os.path.join(config['target_dir'], '{}_{}_dgp_{}_growing_{}_and_{}_{}.png'.format(plot_name, filesafe(metric), dgp, filesafe(param1), filesafe(param2), config['param_str'])), dpi=300)
+                cbar.ax.set_ylabel('median {}({})'.format(transform_name, metric))
+                plt.savefig(os.path.join(config['target_dir'], '{}_{}_{}_dgp_{}_growing_{}_and_{}_{}.png'.format(plot_name, filesafe(metric), transform_name, dgp, filesafe(param1), filesafe(param2), config['param_str'])), dpi=300)
                 plt.close()
 
+def sweep_plot_marginal_metrics(plot_name, sweep_keys, sweep_params, sweep_metrics, config, **kwargs):
+    transform_fn = lambda x, dgp, method, metric: x[dgp][method][metric]
+    transform_name = ''
+    method_subset = list(config['methods'].keys())
+    sweep_plot_marginal_transformed_metric(transform_fn, transform_name, method_subset, plot_name, sweep_keys, sweep_params, sweep_metrics, config, **kwargs)
 
-def sweep_plot_marginal_metric_comparisons(plot_name, sweep_keys, sweep_params, sweep_metrics, config, param_subset=None, select_vals=None, filter_vals=None):
-    sweeps = {}
-    for dgp_key, dgp_val in config['dgp_opts'].items():
-        if hasattr(dgp_val, "__len__"):
-            sweeps[dgp_key] = dgp_val
+def sweep_plot_marginal_metric_differences(plot_name, sweep_keys, sweep_params, sweep_metrics, config, **kwargs):
+    transform_fn = lambda x, dgp, method, metric: x[dgp][method][metric] - x[dgp][config['proposed_method']][metric]
+    transform_name = 'decrease'
+    method_subset = list(m for m in config['methods'].keys() if m != config['proposed_method'])
+    sweep_plot_marginal_transformed_metric(transform_fn, transform_name, method_subset, plot_name, sweep_keys, sweep_params, sweep_metrics, config, **kwargs)
 
-    mask = _select_config_keys(sweep_keys, select_vals, filter_vals)
-    if np.sum(mask) == 0:
-        print("Filtering resulted in no valid configurations!")
-        return 
-
-    for dgp in config['dgps'].keys():
-        for metric in config['metrics'].keys():
-            for param, param_vals in sweeps.items():
-                if param_subset is not None and param not in param_subset:
-                    continue
-                plt.figure(figsize=(5, 3))
-                for method in (m for m in config['methods'].keys() if m !=config['proposed_method']):
-                    medians = []
-                    mins = []
-                    maxs = []
-                    for val in param_vals:
-                        subset = [metrics[dgp][method][metric] - metrics[dgp][config['proposed_method']][metric]  for key, metrics, ms
-                                        in zip(sweep_keys, sweep_metrics, mask) 
-                                        if (param, val) in key and ms]
-                        if len(subset) > 0:
-                            grouped_results = np.concatenate(subset)
-                            medians.append(np.median(grouped_results))
-                            mins.append(np.min(grouped_results))
-                            maxs.append(np.max(grouped_results))
-                    plt.plot(param_vals, medians, label=method)
-                    plt.fill_between(param_vals, maxs, mins, alpha=0.3)
-                plt.legend()
-                plt.xlabel(param)
-                plt.ylabel('decrease in {}'.format(metric))
-                plt.tight_layout()
-                plt.savefig(os.path.join(config['target_dir'], '{}_{}_decrease_dgp_{}_growing_{}_{}.png'.format(plot_name, filesafe(metric), dgp, filesafe(param), config['param_str'])), dpi=300)
-                plt.close()
-
-            for param1, param2 in itertools.combinations(sweeps.keys(), 2):
-                if param_subset is not None and (param1, param2) not in param_subset:
-                    continue
-                x, y, z = [], [], []
-                for method_it, method in enumerate((m for m in config['methods'].keys() if m !=config['proposed_method'])):
-                    x.append([]), y.append([]), z.append([])
-                    for val1, val2 in itertools.product(*[sweeps[param1], sweeps[param2]]):
-                        subset = [metrics[dgp][method][metric] - metrics[dgp][config['proposed_method']][metric] for key, metrics, ms
-                                        in zip(sweep_keys, sweep_metrics, mask) 
-                                        if (param1, val1) in key and (param2, val2) in key and ms]
-                        if len(subset) > 0:
-                            grouped_results = np.concatenate(subset)
-                            x[method_it].append(val1)
-                            y[method_it].append(val2)
-                            z[method_it].append(np.median(grouped_results))
-                vmin = np.min(z)
-                vmax = np.max(z)
-                fig, axes = plt.subplots(nrows=1, ncols=len(config['methods']) - 1, figsize=(4 * (len(config['methods']) - 1), 3))
-                if not hasattr(axes, '__len__'):
-                    axes = [axes]
-                for method_it, (method, ax) in enumerate(zip((m for m in config['methods'].keys() if m !=config['proposed_method']), axes)):
-                    xi = np.linspace(np.min(x[method_it]), np.max(x[method_it]), 5*len(x[method_it]))
-                    yi = np.linspace(np.min(y[method_it]), np.max(y[method_it]), 5*len(y[method_it]))
-                    zi = griddata(np.array(x[method_it]), np.array(y[method_it]), np.array(z[method_it]), xi, yi, interp='linear')
-                    ax.contour(xi, yi, zi, 15, linewidths=0.2, colors='k')
-                    im = ax.pcolormesh(xi, yi, zi, cmap=plt.cm.Reds, vmin=vmin, vmax=vmax)
-                    ax.contourf(xi, yi, zi, 15, cmap=plt.cm.Reds, vmin=vmin, vmax=vmax)
-                    ax.scatter(np.array(x[method_it]), np.array(y[method_it]), alpha=0.5, s=3, c='b')
-                    ax.set_xlabel(param1)
-                    ax.set_ylabel(param2)
-                    ax.set_title(method)
-                
-                plt.tight_layout()
-                fig.subplots_adjust(right=0.8)
-                cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.75])
-                cbar = fig.colorbar(im, cax=cbar_ax)
-                cbar.ax.set_ylabel('median decrease in {}'.format(metric))
-                plt.savefig(os.path.join(config['target_dir'], '{}_{}_decrease_dgp_{}_growing_{}_and_{}_{}.png'.format(plot_name, filesafe(metric), dgp, filesafe(param1), filesafe(param2), config['param_str'])), dpi=300)
-                plt.close()
-
+def sweep_plot_marginal_metric_ratios(plot_name, sweep_keys, sweep_params, sweep_metrics, config, **kwargs):
+    transform_fn = lambda x, dgp, method, metric: 100 * (x[dgp][method][metric] - x[dgp][config['proposed_method']][metric]) / x[dgp][method][metric]
+    transform_name = '% decrease'
+    method_subset = list(m for m in config['methods'].keys() if m != config['proposed_method'])
+    sweep_plot_marginal_transformed_metric(transform_fn, transform_name, method_subset, plot_name, sweep_keys, sweep_params, sweep_metrics, config, **kwargs)

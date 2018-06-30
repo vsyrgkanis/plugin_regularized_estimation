@@ -36,7 +36,6 @@ CONFIG = {
             "plot1": {'param_subset': ['$k_g$'], 'select_vals': {'$\\sigma_\\epsilon$': [1.0], '$\\sigma_\\eta$': [1.0]}, 'filter_vals': {}},
             "plot1b": {'param_subset': ['$k_g$'], 'select_vals': {'$\\sigma_\\epsilon$': [2.0], '$\\sigma_\\eta$': [1.0]}, 'filter_vals': {}},
             "plot1c": {'param_subset': ['$k_g$'], 'select_vals': {'$\\sigma_\\epsilon$': [3.0], '$\\sigma_\\eta$': [1.0]}, 'filter_vals': {}},
-            "plot1d": {'param_subset': ['$k_g$'], 'select_vals': {'$\\sigma_\\epsilon$': [1.0], '$\\sigma_\\eta$': [1.0]}, 'filter_vals': {}},
             "plot1e": {'param_subset': ['$k_g$'], 'select_vals': {'$\\sigma_\\epsilon$': [1.0], '$\\sigma_\\eta$': [2.0]}, 'filter_vals': {}},
             "plot1f": {'param_subset': ['$k_g$'], 'select_vals': {'$\\sigma_\\epsilon$': [1.0], '$\\sigma_\\eta$': [3.0]}, 'filter_vals': {}},
             "plot2": {'param_subset': [('$k_g$', '$\\sigma_\\eta$')], 'select_vals': {'$\\sigma_\\epsilon$':[1.0]}, 'filter_vals': {}},

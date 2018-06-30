@@ -132,7 +132,11 @@ class MonteCarloSweep:
                                                     param_subset=plot_fn['param_subset'],
                                                     select_vals=plot_fn['select_vals'],
                                                     filter_vals=plot_fn['filter_vals'])
-                plotting.sweep_plot_marginal_metric_comparisons(plot_key, sweep_keys, sweep_params, sweep_metrics, self.config,
+                plotting.sweep_plot_marginal_metric_differences(plot_key, sweep_keys, sweep_params, sweep_metrics, self.config,
+                                                    param_subset=plot_fn['param_subset'],
+                                                    select_vals=plot_fn['select_vals'],
+                                                    filter_vals=plot_fn['filter_vals'])
+                plotting.sweep_plot_marginal_metric_ratios(plot_key, sweep_keys, sweep_params, sweep_metrics, self.config,
                                                     param_subset=plot_fn['param_subset'],
                                                     select_vals=plot_fn['select_vals'],
                                                     filter_vals=plot_fn['filter_vals'])
