@@ -117,7 +117,7 @@ def sweep_plot_marginal_transformed_metric(transform_fn, transform_name, method_
                 plt.close()
             
             for param1, param2 in itertools.combinations(sweeps.keys(), 2):
-                if param_subset is not None and (param1, param2) not in param_subset:
+                if param_subset is not None and (param1, param2) not in param_subset and (param2, param1) not in param_subset:
                     continue
                 x, y, z = [], [], []
                 for method_it, method in enumerate(method_subset):
