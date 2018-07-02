@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from matplotlib.mlab import griddata
 plt.style.use('ggplot')
 from mcpy.utils import filesafe
+import mcpy.metrics
 import itertools
 
 def plot_subset_param_histograms(param_estimates, metric_results, config, subset):
@@ -64,8 +65,26 @@ def plot_metric_comparisons(param_estimates, metric_results, config):
             plt.close()
     return
 
+def instance_plot(plot_name, param_estimates, metric_results, config, plot_config):
+    methods = plot_config['methods'] if 'methods' in plot_config else list(config['methods'].keys())
+    metrics = plot_config['metrics'] if 'metrics' in plot_config else list(config['metrics'].keys())
+    dgps = plot_config['dgps'] if 'dgps' in plot_config else list(config['dgps'].keys())
+    metric_transforms = plot_config['metric_transforms'] if 'metric_transforms' in plot_config else {'': mcpy.metrics.transform_identity()}
+    
+    for tr_name, tr_fn in metric_transforms.items():
+        for dgp_name in dgps:
+            for metric_name in metrics:
+                plt.figure(figsize=(1.5 * len(methods), 2.5))
+                plt.violinplot([tr_fn(metric_results, dgp_name, method_name, metric_name, config) for method_name in methods], showmedians=True)
+                plt.xticks(np.arange(1, len(methods) + 1), methods)
+                plt.ylabel('{}({})'.format(tr_name, metric_name))
+                plt.tight_layout()
+                plt.savefig(os.path.join(config['target_dir'], '{}_{}_{}_dgp_{}_{}.png'.format(plot_name, filesafe(metric_name), tr_name, dgp_name, config['param_str'])), dpi=300)
+                plt.close()
+    return
 
 def _select_config_keys(sweep_keys, select_vals, filter_vals):
+    
     if select_vals is not None:
         mask_select = [all(any((p, v) in key for v in vlist) for p, vlist in select_vals.items()) for key in sweep_keys]
     else:
@@ -77,29 +96,30 @@ def _select_config_keys(sweep_keys, select_vals, filter_vals):
     mask = [ms and mf for ms, mf in zip(mask_select, mask_filter)]
     return mask
 
-def sweep_plot_marginal_transformed_metric(transform_fn, transform_name, method_subset, plot_name, sweep_keys, sweep_params, sweep_metrics, config, param_subset=None, select_vals=None, filter_vals=None):
+def sweep_plot_marginal_transformed_metric(transform_fn, transform_name, dgps, methods, metrics, plot_name, sweep_keys, sweep_params, sweep_metrics, config, param_subset={}, select_vals={}, filter_vals={}):
+    
     sweeps = {}
     for dgp_key, dgp_val in config['dgp_opts'].items():
         if hasattr(dgp_val, "__len__"):
             sweeps[dgp_key] = dgp_val
-    
+ 
     mask = _select_config_keys(sweep_keys, select_vals, filter_vals)
     if np.sum(mask) == 0:
         print("Filtering resulted in no valid configurations!")
         return 
 
-    for dgp in config['dgps'].keys():
-        for metric in config['metrics'].keys():
+    for dgp in dgps:
+        for metric in metrics:
             for param, param_vals in sweeps.items():
                 if param_subset is not None and param not in param_subset:
                     continue
                 plt.figure(figsize=(5, 3))
-                for method in method_subset:
+                for method in methods:
                     medians = []
                     mins = []
                     maxs = []
                     for val in param_vals:
-                        subset = [transform_fn(metrics, dgp, method, metric) for key, metrics, ms
+                        subset = [transform_fn(metrics, dgp, method, metric, config) for key, metrics, ms
                                         in zip(sweep_keys, sweep_metrics, mask) 
                                         if (param, val) in key and ms]
                         if len(subset) > 0:
@@ -120,10 +140,10 @@ def sweep_plot_marginal_transformed_metric(transform_fn, transform_name, method_
                 if param_subset is not None and (param1, param2) not in param_subset and (param2, param1) not in param_subset:
                     continue
                 x, y, z = [], [], []
-                for method_it, method in enumerate(method_subset):
+                for method_it, method in enumerate(methods):
                     x.append([]), y.append([]), z.append([])
                     for val1, val2 in itertools.product(*[sweeps[param1], sweeps[param2]]):
-                        subset = [transform_fn(metrics, dgp, method, metric) for key, metrics, ms
+                        subset = [transform_fn(metrics, dgp, method, metric, config) for key, metrics, ms
                                         in zip(sweep_keys, sweep_metrics, mask) 
                                         if (param1, val1) in key and (param2, val2) in key and ms]
                         if len(subset) > 0:
@@ -133,10 +153,10 @@ def sweep_plot_marginal_transformed_metric(transform_fn, transform_name, method_
                             z[method_it].append(np.median(grouped_results))
                 vmin = np.min(z)
                 vmax = np.max(z)
-                fig, axes = plt.subplots(nrows=1, ncols=len(method_subset), figsize=(4 * len(method_subset), 3))
+                fig, axes = plt.subplots(nrows=1, ncols=len(methods), figsize=(4 * len(methods), 3))
                 if not hasattr(axes, '__len__'):
                     axes = [axes]
-                for method_it, (method, ax) in enumerate(zip(method_subset, axes)):
+                for method_it, (method, ax) in enumerate(zip(methods, axes)):
                     xi = np.linspace(np.min(x[method_it]), np.max(x[method_it]), 5*len(x[method_it]))
                     yi = np.linspace(np.min(y[method_it]), np.max(y[method_it]), 5*len(y[method_it]))
                     zi = griddata(np.array(x[method_it]), np.array(y[method_it]), np.array(z[method_it]), xi, yi, interp='linear')
@@ -157,20 +177,15 @@ def sweep_plot_marginal_transformed_metric(transform_fn, transform_name, method_
                 plt.savefig(os.path.join(config['target_dir'], '{}_{}_{}_dgp_{}_growing_{}_and_{}_{}.png'.format(plot_name, filesafe(metric), transform_name, dgp, filesafe(param1), filesafe(param2), config['param_str'])), dpi=300)
                 plt.close()
 
-def sweep_plot_marginal_metrics(plot_name, sweep_keys, sweep_params, sweep_metrics, config, **kwargs):
-    transform_fn = lambda x, dgp, method, metric: x[dgp][method][metric]
-    transform_name = ''
-    method_subset = list(config['methods'].keys())
-    sweep_plot_marginal_transformed_metric(transform_fn, transform_name, method_subset, plot_name, sweep_keys, sweep_params, sweep_metrics, config, **kwargs)
-
-def sweep_plot_marginal_metric_differences(plot_name, sweep_keys, sweep_params, sweep_metrics, config, **kwargs):
-    transform_fn = lambda x, dgp, method, metric: x[dgp][method][metric] - x[dgp][config['proposed_method']][metric]
-    transform_name = 'decrease'
-    method_subset = list(m for m in config['methods'].keys() if m != config['proposed_method'])
-    sweep_plot_marginal_transformed_metric(transform_fn, transform_name, method_subset, plot_name, sweep_keys, sweep_params, sweep_metrics, config, **kwargs)
-
-def sweep_plot_marginal_metric_ratios(plot_name, sweep_keys, sweep_params, sweep_metrics, config, **kwargs):
-    transform_fn = lambda x, dgp, method, metric: 100 * (x[dgp][method][metric] - x[dgp][config['proposed_method']][metric]) / x[dgp][method][metric]
-    transform_name = '% decrease'
-    method_subset = list(m for m in config['methods'].keys() if m != config['proposed_method'])
-    sweep_plot_marginal_transformed_metric(transform_fn, transform_name, method_subset, plot_name, sweep_keys, sweep_params, sweep_metrics, config, **kwargs)
+def sweep_plot(plot_name, sweep_keys, sweep_params, sweep_metrics, config, plot_config):
+    param_subset = plot_config['varying_params'] if 'varying_params' in plot_config else None
+    select_vals = plot_config['select_vals'] if 'select_vals' in plot_config else {}
+    filter_vals = plot_config['filter_vals'] if 'filter_vals' in plot_config else {}
+    methods = plot_config['methods'] if 'methods' in plot_config else list(config['methods'].keys())
+    metrics = plot_config['metrics'] if 'metrics' in plot_config else list(config['metrics'].keys())
+    dgps = plot_config['dgps'] if 'dgps' in plot_config else list(config['dgps'].keys())
+    metric_transforms = plot_config['metric_transforms'] if 'metric_transforms' in plot_config else {'': mcpy.metrics.transform_identity}
+    
+    for tr_name, tr_fn in metric_transforms.items():
+        sweep_plot_marginal_transformed_metric(tr_fn, tr_name, dgps, methods, metrics, plot_name, sweep_keys, sweep_params, sweep_metrics, config,
+                                                param_subset=param_subset, select_vals=select_vals, filter_vals=filter_vals)
