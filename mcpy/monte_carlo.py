@@ -41,18 +41,15 @@ class MonteCarlo:
         np.random.seed(exp_id)
 
         param_estimates = {}
-        metric_results = {}
+        true_params = {}
         for dgp_name, dgp_fn in self.config['dgps'].items():
             data, true_param = dgp_fn(self.config['dgp_opts'])
+            true_params[dgp_name] = true_param
             param_estimates[dgp_name] = {}
-            metric_results[dgp_name] = {}
             for method_name, method in self.config['methods'].items():
                 param_estimates[dgp_name][method_name] = method(data, self.config['method_opts'])
-                metric_results[dgp_name][method_name] = {}
-                for metric_name, metric in self.config['metrics'].items():
-                    metric_results[dgp_name][method_name][metric_name] = metric(param_estimates[dgp_name][method_name], true_param)
-
-        return param_estimates, metric_results
+                
+        return param_estimates, true_params
 
     def run(self):
         ''' Runs multiple experiments in parallel on randomly generated instances and samples and returns
@@ -71,7 +68,7 @@ class MonteCarlo:
             results = Parallel(n_jobs=-1, verbose=1)(
                     delayed(self.experiment)(random_seed + exp_id)
                     for exp_id in range(self.config['mc_opts']['n_experiments']))
-        joblib.dump(results, results_file)
+            joblib.dump(results, results_file)
         
         param_estimates = {}
         metric_results = {}
@@ -81,12 +78,13 @@ class MonteCarlo:
             for method_name in self.config['methods'].keys():
                 param_estimates[dgp_name][method_name] = np.array([results[i][0][dgp_name][method_name] for i in range(self.config['mc_opts']['n_experiments'])])
                 metric_results[dgp_name][method_name] = {}
-                for metric_name in self.config['metrics'].keys():
-                    metric_results[dgp_name][method_name][metric_name] = np.array([results[i][1][dgp_name][method_name][metric_name] for i in range(self.config['mc_opts']['n_experiments'])])
-            
+                for metric_name, metric_fn in self.config['metrics'].items():
+                    metric_results[dgp_name][method_name][metric_name] = np.array([metric_fn(results[i][0][dgp_name][method_name], results[i][1][dgp_name]) 
+                                                                                    for i in range(self.config['mc_opts']['n_experiments'])])
+
         for plot_name, plot_fn in self.config['plots'].items():
             if isinstance(plot_fn, dict):
-                plotting.instance_plot(plot_name, param_estimates, metric_results, self.config, plot_config)
+                plotting.instance_plot(plot_name, param_estimates, metric_results, self.config, plot_fn)
             else:
                 plot_fn(param_estimates, metric_results, self.config)
 

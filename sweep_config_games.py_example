@@ -3,6 +3,12 @@ import games
 from mcpy import metrics
 from mcpy import plotting
 
+def select_coord(x, dgp, method, metric, config):
+    return x[dgp][method][metric][:, 0]
+
+def plot_non_zero_histograms(param_estimates, metric_results, config):
+    plotting.plot_subset_param_histograms(param_estimates, metric_results, config, np.concatenate((np.arange(config['dgp_opts']['kappa_gamma']), [config['dgp_opts']['n_dim']])))
+
 CONFIG = {
         "dgps": {
             "one_player": games.stylized_data,
@@ -26,14 +32,15 @@ CONFIG = {
         },
         "metrics": {
             "$\\ell_2$ error": metrics.l2_error,
-            #"$\\ell_1$ error": metrics.l1_error,
-            #"bias": metrics.bias,
-            #"truth": metrics.truth,
-            #"estimates": metrics.raw_estimate,
-            #"nonzero_estimates": metrics.raw_estimate_nonzero_truth
+            "$\\ell_1$ error": metrics.l1_error,
+            "bias": metrics.bias,
+            "truth": metrics.truth,
+            "estimates": metrics.raw_estimate,
+            "nonzero_estimates": metrics.raw_estimate_nonzero_truth
         },
         "plots": {
-            "iplot1": {'methods': ["2SLG"], 'metrics': ["$\\ell_2$ error"], 'metric_transforms': {'% decrease': metrics.transform_ratio}}
+            "hist": plot_non_zero_histograms,
+            "iplot1": {'metrics': ["bias"], 'metric_transforms': {'coord[0]': select_coord}}
         },
         "sweep_plots": {
             "plot1": {'varying_params': [("sigma_x", "n_dim")], 'select_vals': {'n_samples': [5000]}, 'methods': ["2SLG"], 'metrics': ["$\\ell_2$ error"], 'metric_transforms': {'% decrease': metrics.transform_ratio} },
@@ -42,7 +49,7 @@ CONFIG = {
             "plot1d": {'varying_params': [("sigma_x", "n_dim")], 'select_vals': {'n_samples': [10000]}, 'methods': ["2SLG", "2SOrthoLG"], 'metrics': ["$\\ell_2$ error"]},
             "plot1e": {'varying_params': ["n_dim"], 'select_vals': {'sigma_x': [2.0] ,'n_samples': [5000]},
                         'methods': ["2SLG"], 'metrics': ["$\\ell_2$ error"], 'metric_transforms': {'% decrease': metrics.transform_ratio}},
-            "plot1e": {'varying_params': ["n_dim"], 'select_vals': {'sigma_x': [2.0] ,'n_samples': [10000]},
+            "plot1f": {'varying_params': ["n_dim"], 'select_vals': {'sigma_x': [2.0] ,'n_samples': [10000]},
                         'methods': ["2SLG"], 'metrics': ["$\\ell_2$ error"], 'metric_transforms': {'% decrease': metrics.transform_ratio}}
         },
         "mc_opts": {
