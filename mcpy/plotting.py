@@ -69,7 +69,7 @@ def instance_plot(plot_name, param_estimates, metric_results, config, plot_confi
     methods = plot_config['methods'] if 'methods' in plot_config else list(config['methods'].keys())
     metrics = plot_config['metrics'] if 'metrics' in plot_config else list(config['metrics'].keys())
     dgps = plot_config['dgps'] if 'dgps' in plot_config else list(config['dgps'].keys())
-    metric_transforms = plot_config['metric_transforms'] if 'metric_transforms' in plot_config else {'': mcpy.metrics.transform_identity()}
+    metric_transforms = plot_config['metric_transforms'] if 'metric_transforms' in plot_config else {'': mcpy.metrics.transform_identity}
     
     for tr_name, tr_fn in metric_transforms.items():
         for dgp_name in dgps:
