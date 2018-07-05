@@ -27,6 +27,9 @@ For replicating the experiments related to estimation of conditional moment mode
 ```{r, engine='bash', missing data experiments}
 cp config_missing_data.py_example config_missing_data.py
 python mc_from_config.py --config config_missing_data
+
+cp sweep_config_missing_data.py_example sweep_config_missing_data.py
+python sweep_mc_from_config.py --config sweep_config_missing_data
 ```
 The DGP and estimation methods for this application are contained in `missing_data.py`.
 
@@ -35,6 +38,9 @@ For replicating the experiments related to estimation in games of incomplete inf
 ```{r, engine='bash', games of incomplete information experiments}
 cp config_games.py_example config_games.py
 python mc_from_config.py --config config_games
+
+cp sweep_config_games.py_example sweep_config_games.py
+python sweep_mc_from_config.py --config sweep_config_games
 ```
 The DGP and estimation methods for this application are contained in `games.py`.
 
