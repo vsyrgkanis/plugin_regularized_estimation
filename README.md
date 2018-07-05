@@ -40,6 +40,7 @@ The DGP and estimation methods for this application are contained in `games.py`.
 
 ## MCPY library
 The library folder ```mcpy``` contains library code related to running generic monte carlo experiments from config files and saving and running the results. 
+Check out the notebook ```example_mcpy.ipynb``` for a simple example of how to use the library.
 
 A simple config dictionary allows you to run monte carlo experiments for some configuration of the parameters of the dgp and the estimation methods and allows you to specify arbitrary methods to use to estimate for each 
 sample, arbitrary set of dgps to use to generate samples, arbitrary metrics to evaluate, and arbitrary plots to create from the experimental results. The monte carlo class will 
