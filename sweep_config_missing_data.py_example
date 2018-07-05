@@ -1,0 +1,50 @@
+import os
+import numpy as np
+import missing_data
+from mcpy import metrics
+from mcpy import plotting
+
+CONFIG = {
+        "dgps": {
+            "dgp1": missing_data.gen_data
+        },
+        "dgp_opts": {
+            '$\\sigma_\\eta$': 0.1, # variance of error in secondary moment equation, i.e. multiplier in logistic index
+            '$\\sigma_x$': [1.0, 3.0, 6.0], # variance parameter for co-variate distribution
+            '$dim_z$': 20, # dimension of variables used for heterogeneity
+            '$dim_x$': [20, 40, 80], # dimension of controls x
+            '$n_samples$': 5000, # samples used for estimation
+            '$\\kappa_z$': [1, 5, 10, 20], # support size of nuisance
+            '$\\kappa_\\theta$': 1, # support size of target parameter
+            '$\\sigma_\\epsilon$': [1.0, 2.0, 3.0], # variance of error in secondary moment equation            
+        },
+        "methods": {
+            "Direct": missing_data.direct_fit,
+            "IPS oracle": missing_data.non_ortho_oracle, 
+            "Ortho oracle": missing_data.ortho_oracle,
+            "IPS": missing_data.non_ortho,
+            "Ortho": missing_data.ortho
+        },
+        "method_opts": {
+            'lambda_coef': 1.0, # coeficient in front of the asymptotic rate for regularization lambda
+            'n_folds': 3, # number of folds used in cross-fitting
+        },
+        "metrics": {
+            "$\\ell_2$ error": metrics.l2_error
+        },
+        "plots": {
+        },
+        "sweep_plots":{
+            'ipmr_kz_1_sx_3_dx_se': {'varying_params':[('$dim_x$', '$\\sigma_\\epsilon$')], 'select_vals': {'$\\sigma_x$': [3.0], '$\\kappa_z$': [1]}, 'methods':['IPS'], 'metric_transforms': {'% decrease': metrics.transform_ratio}},
+            'ipmr_kz_1_se_1_dx_sx': {'varying_params':[('$dim_x$', '$\\sigma_x$')], 'select_vals': {'$\\sigma_\\epsilon$': [1.0], '$\\kappa_z$': [1]}, 'methods':['IPS'], 'metric_transforms': {'% decrease': metrics.transform_ratio}},
+            'dmr_kz_1_sx_3_dx_se': {'varying_params':[('$dim_x$', '$\\sigma_\\epsilon$')], 'select_vals': {'$\\sigma_x$': [3.0], '$\\kappa_z$': [1]}, 'methods':['Direct'], 'metric_transforms': {'% decrease': metrics.transform_ratio}},
+            'dmr_kz_1_se_1_dx_sx': {'varying_params':[('$dim_x$', '$\\sigma_x$')], 'select_vals': {'$\\sigma_\\epsilon$': [1.0], '$\\kappa_z$': [1]}, 'methods':['Direct'], 'metric_transforms': {'% decrease': metrics.transform_ratio}}
+        },
+        "mc_opts": {
+            'n_experiments': 100, # number of monte carlo experiments
+            "seed": 123
+        },
+        "proposed_method": "Ortho",
+        "target_dir": os.path.join("cluster","sweep_results_missing"),
+        "reload_results": True
+    }

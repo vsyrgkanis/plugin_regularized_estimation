@@ -25,14 +25,14 @@ def gen_data(opts):
 
     We observe (x, z, d, d*y)
     """
-    n_samples = opts['n_samples'] 
-    dim_x = opts['dim_x']
-    dim_z = opts['dim_z']
-    kappa_theta = opts['kappa_theta']
-    kappa_z = opts['kappa_z']
-    sigma_x = opts['sigma_x']
-    sigma_epsilon = opts['sigma_epsilon']
-    sigma_eta = opts['sigma_eta']
+    n_samples = opts['$n_samples$'] 
+    dim_x = opts['$dim_x$']
+    dim_z = opts['$dim_z$']
+    kappa_theta = opts['$\\kappa_\\theta$']
+    kappa_z = opts['$\\kappa_z$']
+    sigma_x = opts['$\\sigma_x$']
+    sigma_epsilon = opts['$\\sigma_\\epsilon$']
+    sigma_eta = opts['$\\sigma_\\eta$']
 
     x = np.random.uniform(-sigma_x, sigma_x, size=(n_samples, dim_x))
     z = np.random.uniform(-sigma_x, sigma_x, size=(n_samples, dim_z))

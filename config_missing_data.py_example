@@ -8,14 +8,14 @@ CONFIG = {
             "dgp1": missing_data.gen_data
         },
         "dgp_opts": {
-            'n_samples': 5000, # samples used for estimation
-            'dim_x': 20, # dimension of controls x
-            'dim_z': 20, # dimension of variables used for heterogeneity (subset of x)
-            'kappa_theta': 1, # support size of target parameter
-            'kappa_z': 1, # support size of nuisance
-            'sigma_epsilon': 1.0, # variance of error in secondary moment equation
-            'sigma_eta': 0.1, # variance of error in secondary moment equation, i.e. multiplier in logistic index
-            'sigma_x': 3.0 # variance parameter for co-variate distribution
+            '$n_samples$': 5000, # samples used for estimation
+            '$dim_x$': 20, # dimension of controls x
+            '$dim_z$': 20, # dimension of variables used for heterogeneity 
+            '$\\kappa_\\theta$': 1, # support size of target parameter
+            '$\\kappa_z$': 1, # support size of nuisance
+            '$\\sigma_\\epsilon$': 1.0, # variance of error in secondary moment equation
+            '$\\sigma_\\eta$': 0.1, # variance of error in secondary moment equation, i.e. multiplier in logistic index
+            '$\\sigma_x$': 3.0 # variance parameter for co-variate distribution
         },
         "methods": {
             "Direct": missing_data.direct_fit,

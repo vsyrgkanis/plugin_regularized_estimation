@@ -25,3 +25,6 @@ def transform_agg_median(x, dgp, method, metric, config):
 
 def transform_agg_max(x, dgp, method, metric, config):
     return np.max(x[dgp][method][metric], axis=1)
+
+def transform_diff_positive(x, dgp, method, metric, config):
+    return x[dgp][method][metric] - x[dgp][config['proposed_method']][metric] >= 0
