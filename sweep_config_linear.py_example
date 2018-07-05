@@ -11,9 +11,9 @@ CONFIG = {
         },
         "dgp_opts": {
             '$n$': 5000, # samples used for estimation
-            '$p$': 10, # dimension of controls x
+            '$p$': 100, # dimension of controls x
             '$k_\\theta$': 1, # support size of target parameter
-            '$k_g$': np.arange(1, 10, 3), # support size of nuisance
+            '$k_g$': np.arange(1, 40, 3), # support size of nuisance
             '$\\sigma_\\eta$': np.arange(1.0, 4.0),  # variance of error in secondary moment equation
             '$\\sigma_\\epsilon$': np.arange(1.0, 4.0) # variance of error in primary moment equation
         },
@@ -38,7 +38,7 @@ CONFIG = {
             "plot3": {'varying_params': [('$k_g$', '$\\sigma_\\epsilon$')], 'select_vals': {'$\\sigma_\\eta$':[1.0]}, 'methods': ["Direct"], 'metric_transforms': {'% decrease': metrics.transform_ratio}}
         },
         "mc_opts": {
-            'n_experiments': 5, # number of monte carlo experiments
+            'n_experiments': 100, # number of monte carlo experiments
             "seed": 123
         },
         "proposed_method": "CrossOrtho",
