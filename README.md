@@ -76,15 +76,25 @@ Now we are ready to write our config file that will specify the monte carlo simu
 from mcpy import metrics
 from mcpy import plotting
 CONFIG = {
+    # Functions to be used for data generation
     'dgps': {'linear_dgp': dgp},
+    # Dictionary of parameters to the dgp functions
     'dgp_opts': {'n_dim': 10, 'n_samples': 100, 'kappa': 2},
+    # Estimation methods to evaluate
     'methods': {'ols': ols, 'lasso': lasso},
+    # Dictionary of parameters to the estimation functions
     'method_opts': {'l1_reg': 0.01},
+    # Metrics to evaluate. Each metric takes two inputs: estimated param, true param
     'metrics': {'l1_error': metrics.l1_error, 'l2_error': metrics.l2_error},
+    # Options for the monte carlo simulation
     'mc_opts': {'n_experiments': 10, 'seed': 123},
+    # Which of the methods is the proposed one vs a benchmark method. Used in plotting
     'proposed_method': 'lasso',
+    # Target folder for saving plots and results
     'target_dir': 'test_ols',
+    # Whether to reload monte carlo results from the folder if results with the same config spec exist from a previous run
     'reload_results': False,
+    # Which plots to generate. Could either be a dictionary of a plot spec or an ad hoc plot function. A plot spec contains: {'metrics', 'methods', 'dgps', 'metric_transforms'}, that specify a subset of each to plot (defaults to all if not specified). An ad hoc function should be taking as input (param_estimates, metric_results, config)
     'plots': {'all_metrics': {}, 'param_hist': plotting.plot_param_histograms}
 }
 ```
