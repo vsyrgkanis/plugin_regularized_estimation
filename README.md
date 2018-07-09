@@ -12,7 +12,17 @@ For replicating the experiments with the linear heterogeneous treatment effect e
 cp sweep_config_linear.py_example sweep_config_linear.py
 python sweep_mc_from_config.py --config sweep_config_linear
 ```
-The DGP and estimation methods for this application are contained in `linear_te.py`.
+The DGP and estimation methods for this application are contained in `linear_te.py`. 
+
+The above code produces the following figures:
+<p align="center">
+  <img src="figs/linear_te/ell1_error_dgp_dgp1_growing_kappa.png" height="100" title="ell1_error_dgp_dgp1_growing_kappa">
+  <img src="figs/linear_te/ell2_error_dgp_dgp1_growing_kappa.png" height="100" alt="ell2_error_dgp_dgp1_growing_kappa">
+</p>
+<p align="center">
+ <img src="figs/linear_te/plot2_ell2_varying_sigma_eta.png" height="100" alt="plot2_ell2_varying_sigma_eta">
+  <img src="figs/linear_te/plot3_ell2_varying_sigma_epsilon.png" height="100" title="plot3_ell2_varying_sigma_epsilon">
+</p>
 
 ## Heterogeneous Treatment Effects with a Logistic Link
 For replicating the experiments with the logistic heterogeneous treatment effect estimation, run: 
@@ -21,6 +31,15 @@ cp config_logistic.py_example config_logistic.py
 python mc_from_config.py --config config_logistic
 ```
 The DGP and estimation methods for this application are contained in `logistic_te.py`.
+
+The above code produces the following figures:
+<p align="center">
+  <img src="figs/logistic_te/l2_error_logistic.png" height="100" title="l2_error_logistic">
+  <img src="figs/logistic_te/l2_decrease_logistic.png" height="100" alt="l1_decrease_logistic">
+  <img src="figs/logistic_te/l1_error_logistic.png" height="100" alt="l1_error_logistic">
+  <img src="figs/logistic_te/l1_decrease_logistic.png" height="100" title="l1_decrease_logistic">
+</p>
+
 
 ## Conditional Moment Models with Missing Data
 For replicating the experiments related to estimation of conditional moment models with missing data, run: 
@@ -33,6 +52,22 @@ python sweep_mc_from_config.py --config sweep_config_missing_data
 ```
 The DGP and estimation methods for this application are contained in `missing_data.py`.
 
+The above code produces the following figures:
+<p align="center">
+  <img src="figs/missing_data/l2_decrease_missing.png" height="100" title="l2_decrease_missing">
+</p>
+<p align="center">
+<img src="figs/missing_data/l2_errors_missing.png" height="100" alt="l2_errors_missing">
+</p>
+<p align="center">
+  <img src="figs/missing_data/ipmr_kz_1_sx_3_dx_se.png" height="100" title="ipmr_kz_1_sx_3_dx_se">
+  <img src="figs/missing_data/dmr_kz_1_sx_3_dx_se.png" height="100" alt="dmr_kz_1_sx_3_dx_se">
+</p>
+<p align="center">
+  <img src="figs/missing_data/ipmr_kz_1_se_1_dx_sx.png" height="100" alt="ipmr_kz_1_se_1_dx_sx">
+  <img src="figs/missing_data/dmr_kz_1_se_1_dx_sx.png" height="100" title="dmr_kz_1_se_1_dx_sx">
+</p>
+
 ## Games of Incomplete Information
 For replicating the experiments related to estimation in games of incomplete information, run: 
 ```{r, engine='bash', games of incomplete information experiments}
@@ -43,6 +78,24 @@ cp sweep_config_games.py_example sweep_config_games.py
 python sweep_mc_from_config.py --config sweep_config_games
 ```
 The DGP and estimation methods for this application are contained in `games.py`.
+
+The above code produces the following figures:
+<p align="center">
+  <img src="figs/games/l2_error_one_player.png" height="100" title="l2_error_one_player">
+  <img src="figs/games/l2_decrease_one_player.png" height="100" alt="l2_decrease_one_player">
+  <img src="figs/games/l1_error_one_player.png" height="100" alt="l1_error_one_player">
+  <img src="figs/games/l1_decrease_one_player.png" height="100" title="l1_decrease_one_player">
+</p>
+<p align="center">
+  <img src="figs/games/l2_error_two_player.png" height="100" title="l2_error_two_player">
+  <img src="figs/games/l2_decrease_two_player.png" height="100" alt="l2_decrease_two_player">
+  <img src="figs/games/l1_error_two_player.png" height="100" alt="l1_error_two_player">
+  <img src="figs/games/l1_decrease_two_player.png" height="100" title="l1_decrease_two_player">
+</p>
+<p align="center">
+  <img src="figs/games/l2_games_varying_p_sigma_n_5000.png" height="100" title="l2_games_varying_p_sigma_n_5000">
+  <img src="figs/games/l2_games_varying_p_sigma_n_10000.png" height="100" alt="l2_games_varying_p_sigma_n_10000">
+</p>
 
 # MCPY library
 The library folder ```mcpy``` contains library code related to running generic monte carlo experiments from config files and saving and running the results. 
@@ -110,8 +163,8 @@ estimates, metric_results = MonteCarlo(CONFIG).run()
 This code will save the plots in the target_dir. In particular it will save the following two figures that depict the distribution of l1 and l2 errors across the 10 experiments:
 
 <p align="center">
-  <img src="figs/test_ols_l1_error.png" height="200" title="test_ols_l1_error">
-  <img src="figs/test_ols_l2_error.png" height="200" title="test_ols_l2_error">
+  <img src="figs/test_ols/test_ols_l1_error.png" height="200" title="test_ols_l1_error">
+  <img src="figs/test_ols/test_ols_l2_error.png" height="200" title="test_ols_l2_error">
 </p>
 
 A sweep config dictionary, allows you to specify for each dgp option a whole list of parameters, rather than a single value. Then the MonteCarloSweep class will execute monte carlo experiments for each combination of parameters. Subsequently the plotting functions provided can for instance plot how each metric varies as a single parameter varies and averaging out the performance over the settings of the rest of the parameters. Such plots are created for each dgp and metric, and each plot contains the results for each method. This is for instance used in the case of the linear treatment effect experiment. See e.g. `sweep_config_linear.py_example` for a sample sweep-config variable definition.
@@ -152,10 +205,10 @@ sweep_keys, sweep_estimates, sweep_metric_results = MonteCarloSweep(SWEEP_CONFIG
 The sweep plots allows you to define which types of plots to save as some subset of parameters vary while others take a subset of the values.
 For instance, the above four sweep plots will create 8 plots, one for each metric. The four plots corresponding to the l2 error are as follows:
 <p align="center">
-  <img src="figs/var_dim_at_100_samples.png" height="100" title="var_dim_at_100_samples">
-  <img src="figs/var_samples_at_100_dim.png" height="100" alt="var_samples_at_100_dim">
-  <img src="figs/var_samples_and_dim.png" height="100" alt="var_samples_and_dim">
-  <img src="figs/error_diff.png" height="100" title="error_diff">
+  <img src="figs/test_ols/var_dim_at_100_samples.png" height="100" title="var_dim_at_100_samples">
+  <img src="figs/test_ols/var_samples_at_100_dim.png" height="100" alt="var_samples_at_100_dim">
+  <img src="figs/test_ols/var_samples_and_dim.png" height="100" alt="var_samples_and_dim">
+  <img src="figs/test_ols/error_diff.png" height="100" title="error_diff">
 </p>
 Showing how lasso out-performs ols when the number of samples is smaller than the dimension.
 
