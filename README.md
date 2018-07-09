@@ -44,7 +44,7 @@ python sweep_mc_from_config.py --config sweep_config_games
 ```
 The DGP and estimation methods for this application are contained in `games.py`.
 
-## MCPY library
+# MCPY library
 The library folder ```mcpy``` contains library code related to running generic monte carlo experiments from config files and saving and running the results. 
 Check out the notebook ```example_mcpy.ipynb``` for a simple example of how to use the library.
 
@@ -160,6 +160,6 @@ For instance, the above four sweep plots will create 8 plots, one for each metri
 Showing how lasso out-performs ols when the number of samples is smaller than the dimension.
 
 
-## ORTHOPY library
+# ORTHOPY library
 The library folder ```orthopy``` contains modifications to standard estimation methods, such as the logistic regression, that are required for orthogonal estimation, e.g. adding
 and orthogonal correction term to the loss or adding an offset to the index.
