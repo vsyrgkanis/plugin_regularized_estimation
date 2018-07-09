@@ -130,7 +130,13 @@ SWEEP_CONFIG = {
     }
 }
 ```
-The sweep plots allows you to define which types of plots to save as some subset of parameters vary while others take a subset of the values. For instance, the above four sweep plots will create 8 plots, one for each metric. The four plots corresponding to the l2 error are as follows:
+We can then run our sweeping monte carlo with the following command:
+```python
+from mcpy.monte_carlo import MonteCarloSweep
+sweep_keys, sweep_estimates, sweep_metric_results = MonteCarloSweep(SWEEP_CONFIG).run()
+```
+The sweep plots allows you to define which types of plots to save as some subset of parameters vary while others take a subset of the values.
+For instance, the above four sweep plots will create 8 plots, one for each metric. The four plots corresponding to the l2 error are as follows:
 <p align="center">
   <img src="var_dim_at_100_samples.png" height="100" title="var_dim_at_100_samples">
   <img src="var_samples_at_100_dim.png" height="100" alt="var_samples_at_100_dim">
