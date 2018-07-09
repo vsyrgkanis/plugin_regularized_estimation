@@ -100,10 +100,45 @@ This code will save the plots in the target_dir. In particular it will save the 
   <img src="test_ols_l2_error.png" width="350" alt="accessibility text">
 </p>
 
-A sweep config dictionary, allows you to specify for each dgp option a whole list of parameters. Then the MonteCarloSweep class will execute monte carlo experiments for each 
-combination of parameters. Subsequently the plotting functions provided can for instance plot how each metric varies as a single parameter varies and averaging out the performance
-over the settings of the rest of the parameters. Such plots are created for each dgp and metric, and each plot contains the results for each method. This is for instance used
-in the case of the linear treatment effect experiment. See e.g. `sweep_config_linear.py_example` for a sample sweep-config variable definition.
+A sweep config dictionary, allows you to specify for each dgp option a whole list of parameters, rather than a single value. Then the MonteCarloSweep class will execute monte carlo experiments for each combination of parameters. Subsequently the plotting functions provided can for instance plot how each metric varies as a single parameter varies and averaging out the performance over the settings of the rest of the parameters. Such plots are created for each dgp and metric, and each plot contains the results for each method. This is for instance used in the case of the linear treatment effect experiment. See e.g. `sweep_config_linear.py_example` for a sample sweep-config variable definition.
+
+For instance, back to the linear example, we could try to understand how the l1 and l2 errors change as a function of the dimension of the features or the number of samples. We can perform such a sweeping monte carlo by defining a sweep config:
+```python
+SWEEP_CONFIG = {
+    'dgps': {'linear_dgp': dgp},
+    'dgp_opts': {'n_dim': [10, 100, 200], 'n_samples': [100, 200, 300], 'kappa': 2},
+    'methods': {'ols': ols, 'lasso': lasso},
+    'method_opts': {'l1_reg': 0.01},
+    'metrics': {'l1_error': metrics.l1_error, 'l2_error': metrics.l2_error},
+    'mc_opts': {'n_experiments': 10, 'seed': 123},
+    'proposed_method': 'lasso',
+    'target_dir': 'test_sweep_ols',
+    'reload_results': False,
+    # Let's not plot anything per instance
+    'plots': {},
+    # Let's make some plots across the sweep of parameters
+    'sweep_plots': {
+        # Let's plot the errors as a function of the dimensions, holding fixed the samples to 100
+        'var_dim_at_100_samples': {'varying_params': ['n_dim'], 'select_vals': {'n_samples': [100]}},
+        # Let's plot the errors as a function of n_samples, holding fixed the dimensions to 100
+        'var_samples_at_100_dim': {'varying_params': ['n_samples'], 'select_vals': {'n_dim': [100]}},
+        # Let's plot a 2d contour of the median metric of each method as two parameters vary simultaneously
+        'var_samples_and_dim': {'varying_params': [('n_samples', 'n_dim')]},
+        # Let's plot the difference between each method in a designated list with the 'proposed_method' in the config
+        'error_diff_var_samples_and_dim': {'varying_params': [('n_samples', 'n_dim')], 'methods': ['ols'], 
+                                           'metric_transforms': {'diff': metrics.transform_diff}}
+    }
+}
+```
+The sweep plots allows you to define which types of plots to save as some subset of parameters vary while others take a subset of the values. For instance, the above four sweep plots will create 8 plots, one for each metric. The four plots corresponding to the l2 error are as follows:
+<p align="center">
+  <img src="var_dim_at_100_samples.png" height="80" title="var_dim_at_100_samples">
+  <img src="var_samples_at_100_dim.png" height="80" alt="var_samples_at_100_dim">
+  <img src="var_samples_and_dim.png" height="80" alt="var_samples_and_dim">
+  <img src="error_diff.png" height="80" title="error_diff">
+</p>
+Showing how lasso out-performs ols when the number of samples is smaller than the dimension.
+
 
 ## ORTHOPY library
 The library folder ```orthopy``` contains modifications to standard estimation methods, such as the logistic regression, that are required for orthogonal estimation, e.g. adding
