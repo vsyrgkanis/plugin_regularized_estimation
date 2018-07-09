@@ -164,5 +164,48 @@ Showing how lasso out-performs ols when the number of samples is smaller than th
 The library folder ```orthopy``` contains modifications to standard estimation methods, such as the logistic regression, that are required for orthogonal estimation, e.g. adding
 and orthogonal correction term to the loss or adding an offset to the index.
 
-More concretely, the class ```LogisticWithOffsetAndGradientCorrection``` is an estimator adhering to the fit and predict specification of sklearn that enables fitting an "orthogonal" logistic regression. Its fit method minimizes a modified weighted logistic loss, with sample weights, a gradient correction and an index offset:
+More concretely, the class ```LogisticWithOffsetAndGradientCorrection``` is an estimator adhering to the fit and predict specification of sklearn that enables fitting an "orthogonal" logistic regression. Its fit method minimizes a regularized modified weighted logistic loss, with sample weights, a gradient correction and an index offset:
+<p align="center">
+<a href="https://www.codecogs.com/eqnedit.php?latex=L_S(\theta)&space;=&space;\frac{1}{n}\sum_{i=1}^n&space;\ell(y_i,&space;x_i,&space;w_i,&space;v_i,&space;g_i)&space;&plus;&space;\alpha_1&space;\|\theta\|_1&space;&plus;&space;\frac{1}{2}\alpha_2&space;\|\theta\|_2^2" target="_blank"><img src="https://latex.codecogs.com/gif.latex?L_S(\theta)&space;=&space;\frac{1}{n}\sum_{i=1}^n&space;\ell(y_i,&space;x_i,&space;w_i,&space;v_i,&space;g_i)&space;&plus;&space;\alpha_1&space;\|\theta\|_1&space;&plus;&space;\frac{1}{2}\alpha_2&space;\|\theta\|_2^2" title="L_S(\theta) = \frac{1}{n}\sum_{i=1}^n \ell(y_i, x_i, w_i, v_i, g_i) + \alpha_1 \|\theta\|_1 + \frac{1}{2}\alpha_2 \|\theta\|_2^2" /></a>
+<p>
+where the modified logistic loss for each sample is defined as:
+<p align="center">
 <a href="https://www.codecogs.com/eqnedit.php?latex=\ell(y,&space;x,&space;w,&space;v,&space;g)&space;=&space;w&space;\left(&space;y&space;\log(\mathcal{L}(x'\theta&space;&plus;&space;v))&space;&plus;&space;(1-y)&space;\log(1-&space;\mathcal{L}(x'\theta&plus;v))&space;&plus;&space;g\,&space;x'\theta&space;\right&space;)" target="_blank"><img src="https://latex.codecogs.com/gif.latex?\ell(y,&space;x,&space;w,&space;v,&space;g)&space;=&space;w&space;\left(&space;y&space;\log(\mathcal{L}(x'\theta&space;&plus;&space;v))&space;&plus;&space;(1-y)&space;\log(1-&space;\mathcal{L}(x'\theta&plus;v))&space;&plus;&space;g\,&space;x'\theta&space;\right&space;)" title="\ell(y, x, w, v, g) = w \left( y \log(\mathcal{L}(x'\theta + v)) + (1-y) \log(1- \mathcal{L}(x'\theta+v)) + g\, x'\theta \right )" /></a>
+</p>
+
+The specification of the class follows a standard sklearn paradigm:
+```python
+class LogisticWithOffsetAndGradientCorrection():
+    def __init__(self, alpha_l1=0.1, alpha_l2=0.1, tol=1e-6):
+    ''' Initialize
+    alpha_l1 : ell_1 regularization weight
+    alpha_l2 : ell_2 regularization weight
+    tol : minimization tolerance
+    '''
+
+    def fit(self, X, y, offsets=None, grad_corrections=None, sample_weights=None):
+    ''' Fits coefficient theta by minimizing regularized modified logistic loss
+    Parameters
+    X (n x d) matrix of features
+    y (n x 1) matrix of labels
+    offsets (n x 1) matrix of index offsets v
+    grad_corrections (n x 1) matrix of grad corrections g
+    sample_weights (n x 1) matrix of sample weights w
+    '''
+
+    @property
+    def coef_(self):
+    ''' Fitted coefficient '''
+    
+    def predict_proba(self, X, offsets=None):
+    ''' Probabilistic prediction. Returns (n x 2) matrix of probabilities '''
+    
+    def predict(self, X, offsets=None):
+    ''' Binary prediction '''
+
+    def score(self, X, y_true, offsets=None):
+    ''' AUC score '''
+
+    def accuracy(self, X, y_true, offsets=None):
+    ''' Prediction accuracy '''
+```
