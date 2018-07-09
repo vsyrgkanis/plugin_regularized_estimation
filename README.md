@@ -92,10 +92,12 @@ CONFIG = {
     'proposed_method': 'lasso',
     # Target folder for saving plots and results
     'target_dir': 'test_ols',
-    # Whether to reload monte carlo results from the folder if results with the same config spec exist from a previous run
+    # Whether to reload monte carlo results from the folder if results with
+    # the same config spec exist from a previous run
     'reload_results': False,
     # Which plots to generate. Could either be a dictionary of a plot spec or an ad hoc plot function. 
-    # A plot spec contains: {'metrics', 'methods', 'dgps', 'metric_transforms'}, that specify a subset of each to plot (defaults to all if not specified).
+    # A plot spec contains: {'metrics', 'methods', 'dgps', 'metric_transforms'}, 
+    # that specify a subset of each to plot (defaults to all if not specified).
     # An ad hoc function should be taking as input (param_estimates, metric_results, config)
     'plots': {'all_metrics': {}, 'param_hist': plotting.plot_param_histograms}
 }
