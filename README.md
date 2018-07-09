@@ -96,8 +96,8 @@ estimates, metric_results = MonteCarlo(CONFIG).run()
 This code will save the plots in the target_dir. In particular it will save the following two figures that depict the distribution of l1 and l2 errors across the 10 experiments:
 
 <p align="center">
-  <img src="test_ols_l1_error.png" height="100" title="test_ols_l1_error">
-  <img src="test_ols_l2_error.png" height="100" title="test_ols_l2_error">
+  <img src="test_ols_l1_error.png" height="200" title="test_ols_l1_error">
+  <img src="test_ols_l2_error.png" height="200" title="test_ols_l2_error">
 </p>
 
 A sweep config dictionary, allows you to specify for each dgp option a whole list of parameters, rather than a single value. Then the MonteCarloSweep class will execute monte carlo experiments for each combination of parameters. Subsequently the plotting functions provided can for instance plot how each metric varies as a single parameter varies and averaging out the performance over the settings of the rest of the parameters. Such plots are created for each dgp and metric, and each plot contains the results for each method. This is for instance used in the case of the linear treatment effect experiment. See e.g. `sweep_config_linear.py_example` for a sample sweep-config variable definition.
