@@ -110,8 +110,8 @@ estimates, metric_results = MonteCarlo(CONFIG).run()
 This code will save the plots in the target_dir. In particular it will save the following two figures that depict the distribution of l1 and l2 errors across the 10 experiments:
 
 <p align="center">
-  <img src="test_ols_l1_error.png" height="200" title="test_ols_l1_error">
-  <img src="test_ols_l2_error.png" height="200" title="test_ols_l2_error">
+  <img src="figs/test_ols_l1_error.png" height="200" title="test_ols_l1_error">
+  <img src="figs/test_ols_l2_error.png" height="200" title="test_ols_l2_error">
 </p>
 
 A sweep config dictionary, allows you to specify for each dgp option a whole list of parameters, rather than a single value. Then the MonteCarloSweep class will execute monte carlo experiments for each combination of parameters. Subsequently the plotting functions provided can for instance plot how each metric varies as a single parameter varies and averaging out the performance over the settings of the rest of the parameters. Such plots are created for each dgp and metric, and each plot contains the results for each method. This is for instance used in the case of the linear treatment effect experiment. See e.g. `sweep_config_linear.py_example` for a sample sweep-config variable definition.
@@ -152,10 +152,10 @@ sweep_keys, sweep_estimates, sweep_metric_results = MonteCarloSweep(SWEEP_CONFIG
 The sweep plots allows you to define which types of plots to save as some subset of parameters vary while others take a subset of the values.
 For instance, the above four sweep plots will create 8 plots, one for each metric. The four plots corresponding to the l2 error are as follows:
 <p align="center">
-  <img src="var_dim_at_100_samples.png" height="100" title="var_dim_at_100_samples">
-  <img src="var_samples_at_100_dim.png" height="100" alt="var_samples_at_100_dim">
-  <img src="var_samples_and_dim.png" height="100" alt="var_samples_and_dim">
-  <img src="error_diff.png" height="100" title="error_diff">
+  <img src="figs/var_dim_at_100_samples.png" height="100" title="var_dim_at_100_samples">
+  <img src="figs/var_samples_at_100_dim.png" height="100" alt="var_samples_at_100_dim">
+  <img src="figs/var_samples_and_dim.png" height="100" alt="var_samples_and_dim">
+  <img src="figs/error_diff.png" height="100" title="error_diff">
 </p>
 Showing how lasso out-performs ols when the number of samples is smaller than the dimension.
 
