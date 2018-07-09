@@ -18,10 +18,14 @@ The above code produces the following figures:
 <p align="center">
   <img src="figs/linear_te/ell1_error_dgp_dgp1_growing_kappa.png" height="100" title="ell1_error_dgp_dgp1_growing_kappa">
   <img src="figs/linear_te/ell2_error_dgp_dgp1_growing_kappa.png" height="100" alt="ell2_error_dgp_dgp1_growing_kappa">
+  <br/>
+  <i>Growing support size of nuisance</i>
 </p>
 <p align="center">
  <img src="figs/linear_te/plot2_ell2_varying_sigma_eta.png" height="100" alt="plot2_ell2_varying_sigma_eta">
   <img src="figs/linear_te/plot3_ell2_varying_sigma_epsilon.png" height="100" title="plot3_ell2_varying_sigma_epsilon">
+  <br/>
+  <i>Varying support size and variances of errors</i>
 </p>
 
 ## Heterogeneous Treatment Effects with a Logistic Link
@@ -38,6 +42,8 @@ The above code produces the following figures:
   <img src="figs/logistic_te/l2_decrease_logistic.png" height="100" alt="l1_decrease_logistic">
   <img src="figs/logistic_te/l1_error_logistic.png" height="100" alt="l1_error_logistic">
   <img src="figs/logistic_te/l1_decrease_logistic.png" height="100" title="l1_decrease_logistic">
+  <br/>
+  <i>l1 and l2 errors and error decreases (Direct - Ortho)</i>
 </p>
 
 
@@ -54,18 +60,18 @@ The DGP and estimation methods for this application are contained in `missing_da
 
 The above code produces the following figures:
 <p align="center">
+    <img src="figs/missing_data/l2_errors_missing.png" height="100" alt="l2_errors_missing">
   <img src="figs/missing_data/l2_decrease_missing.png" height="100" title="l2_decrease_missing">
-</p>
-<p align="center">
-<img src="figs/missing_data/l2_errors_missing.png" height="100" alt="l2_errors_missing">
+  <br/>
+  <i>l2 errors and error decreases for each benchmark method</i>
 </p>
 <p align="center">
   <img src="figs/missing_data/ipmr_kz_1_sx_3_dx_se.png" height="100" title="ipmr_kz_1_sx_3_dx_se">
   <img src="figs/missing_data/dmr_kz_1_sx_3_dx_se.png" height="100" alt="dmr_kz_1_sx_3_dx_se">
-</p>
-<p align="center">
   <img src="figs/missing_data/ipmr_kz_1_se_1_dx_sx.png" height="100" alt="ipmr_kz_1_se_1_dx_sx">
   <img src="figs/missing_data/dmr_kz_1_se_1_dx_sx.png" height="100" title="dmr_kz_1_se_1_dx_sx">
+  <br/>
+  <i>Percentage decrease of error with varying dimension of nuisance and error variances</i>
 </p>
 
 ## Games of Incomplete Information
@@ -85,16 +91,22 @@ The above code produces the following figures:
   <img src="figs/games/l2_decrease_one_player.png" height="100" alt="l2_decrease_one_player">
   <img src="figs/games/l1_error_one_player.png" height="100" alt="l1_error_one_player">
   <img src="figs/games/l1_decrease_one_player.png" height="100" title="l1_decrease_one_player">
+  <br/>
+  <i>One player DGP</i>
 </p>
 <p align="center">
   <img src="figs/games/l2_error_two_player.png" height="100" title="l2_error_two_player">
   <img src="figs/games/l2_decrease_two_player.png" height="100" alt="l2_decrease_two_player">
   <img src="figs/games/l1_error_two_player.png" height="100" alt="l1_error_two_player">
   <img src="figs/games/l1_decrease_two_player.png" height="100" title="l1_decrease_two_player">
+  <br/>
+  <i>Two player DGP</i>
 </p>
 <p align="center">
   <img src="figs/games/l2_games_varying_p_sigma_n_5000.png" height="100" title="l2_games_varying_p_sigma_n_5000">
   <img src="figs/games/l2_games_varying_p_sigma_n_10000.png" height="100" alt="l2_games_varying_p_sigma_n_10000">
+  <br/>
+  <i>One player DGP, varying dimension and variance of co-variates</i>
 </p>
 
 # MCPY library
