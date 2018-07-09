@@ -4,7 +4,7 @@ Code associated with paper: <i>Plug-in Regularized Estimation of High-Dimensiona
 
 Code assumes Python 3.6, but should also work with Python 2. It also requires basic python packages like, `numpy`, `scipy` and `scikit-learn`.
 
-# File Descriptions
+# Running the Monte Carlo Simulations
 
 ## Linear Heterogeneous Treatment Effects
 For replicating the experiments with the linear heterogeneous treatment effect estimation, run:
