@@ -112,7 +112,7 @@ def stylized_data(opts):
     # Draw sample of entry decisions from probabilities of entry
     y_samples = np.random.binomial(1, sigma)
 
-    return (x_samples, y_samples), np.concatenate((gamma[0, :], [beta]))
+    return (np.tile(x_samples, (1, n_players)), y_samples), np.concatenate((gamma[0, :], [beta]))
     
 
 ###############################
@@ -152,15 +152,14 @@ def two_stage_non_orthogonal(data, opts):
     for train, test in KFold(n_splits=opts['n_splits']).split(X):
         est = first_stage_sigma(X[train], y[train], n_feats)
         X_test_unravel = X[test].reshape((-1, n_feats))
-        sigma_hat_unravel = est.predict_proba(X[test])[:, [1]]
+        sigma_hat_unravel = est.predict_proba(X_test_unravel)[:, [1]]
         sigma_hat[test, :] = sigma_hat_unravel.reshape((-1, n_players))
     
     # estimate second stage for each player
-    sigma_hat_op = np.zeros(n_samples, n_players)
+    sigma_hat_op = np.zeros((n_samples, n_players))
     for i in range(n_players):
         sigma_hat_op[:, i] = np.mean(sigma_hat[:, list(np.arange(i)) + list(np.arange(i+1, n_players))], axis=1)
-    
-    final_est = second_stage_logistic(X, y.flatten(), sigma_hat_op.flatten(), opts)
+    final_est = second_stage_logistic(X[:, :n_feats], y[:, 0], sigma_hat_op[:, 0].reshape(-1,1), opts)
     return final_est.coef_.flatten()
 
 def two_stage_crossfit_orthogonal(data, opts):

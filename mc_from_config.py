@@ -8,7 +8,7 @@ def monte_carlo_main():
     parser.add_argument('--config', type=str, help='config file')
     args = parser.parse_args(sys.argv[1:])
 
-    config = importlib.import_module(args.config)
+    config = importlib.import_module(args.config, __name__)
     MonteCarlo(config.CONFIG).run()
     
 if __name__=="__main__":
