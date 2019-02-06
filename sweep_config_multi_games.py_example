@@ -1,0 +1,62 @@
+import numpy as np
+import games
+from mcpy import metrics
+from mcpy import plotting
+
+def select_coord(x, dgp, method, metric, config):
+    return x[dgp][method][metric][:, 0]
+
+def plot_non_zero_histograms(param_estimates, metric_results, config):
+    plotting.plot_subset_param_histograms(param_estimates, metric_results, config, np.concatenate((np.arange(config['dgp_opts']['kappa_gamma']), [config['dgp_opts']['n_dim']])))
+
+CONFIG = {
+        "dgps": {
+            "one_player": games.stylized_data,
+            #"two_player": games.equilibrium_data
+        },
+        "dgp_opts": {
+            'n_samples': [5000, 10000], # samples used for estimation
+            'n_dim': [1000, 2000, 5000], # dimension of the feature space
+            'sigma_x': [1.0, 2.0, 3.0], # variance of the features
+            'kappa_gamma': 1, # support size of the target parameter
+            'kappa_gamma_aux': 3, # support size for opponent in stylized dgp
+        },
+        "methods": {
+            #"OracleLG": games.two_stage_oracle,
+            "2SLG": games.two_stage_non_orthogonal,
+            "2SOrthoLG": games.two_stage_crossfit_orthogonal
+        },
+        "method_opts": {
+            'lambda_coef': 0.5, # coeficient in front of the asymptotic rate for regularization lambda
+            'n_splits': 3 # number of splits in each cross fitting
+        },
+        "metrics": {
+            "$\\ell_2$ error": metrics.l2_error,
+            "$\\ell_1$ error": metrics.l1_error,
+            "bias": metrics.bias,
+            "truth": metrics.truth,
+            "estimates": metrics.raw_estimate,
+            "nonzero_estimates": metrics.raw_estimate_nonzero_truth
+        },
+        "plots": {
+            "hist": plot_non_zero_histograms,
+            "iplot1": {'metrics': ["bias"], 'metric_transforms': {'coord[0]': select_coord}}
+        },
+        "sweep_plots": {
+            "plot1": {'varying_params': [("sigma_x", "n_dim")], 'select_vals': {'n_samples': [5000]}, 'methods': ["2SLG"], 'metrics': ["$\\ell_2$ error"], 'metric_transforms': {'% decrease': metrics.transform_ratio} },
+            "plot1b": {'varying_params': [("sigma_x", "n_dim")], 'select_vals': {'n_samples': [10000]}, 'methods': ["2SLG"], 'metrics': ["$\\ell_2$ error"], 'metric_transforms': {'% decrease': metrics.transform_ratio} },
+            "plot1c": {'varying_params': [("sigma_x", "n_dim")], 'select_vals': {'n_samples': [5000]}, 'methods': ["2SLG", "2SOrthoLG"], 'metrics': ["$\\ell_2$ error"]},
+            "plot1d": {'varying_params': [("sigma_x", "n_dim")], 'select_vals': {'n_samples': [10000]}, 'methods': ["2SLG", "2SOrthoLG"], 'metrics': ["$\\ell_2$ error"]},
+            "plot1e": {'varying_params': ["n_dim"], 'select_vals': {'sigma_x': [2.0] ,'n_samples': [5000]},
+                        'methods': ["2SLG"], 'metrics': ["$\\ell_2$ error"], 'metric_transforms': {'% decrease': metrics.transform_ratio}},
+            "plot1f": {'varying_params': ["n_dim"], 'select_vals': {'sigma_x': [2.0] ,'n_samples': [10000]},
+                        'methods': ["2SLG"], 'metrics': ["$\\ell_2$ error"], 'metric_transforms': {'% decrease': metrics.transform_ratio}}
+        },
+        "mc_opts": {
+            'n_experiments': 100, # number of monte carlo experiments
+            "seed": 123
+        },
+        "proposed_method": "2SOrthoLG",
+        "target_dir": "sweep_results_games",
+        "reload_results": True
+    }
