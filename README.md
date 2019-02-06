@@ -2,7 +2,7 @@
 
 Code associated with paper: <i>Plug-in Regularized Estimation of High-Dimensional Parameters in Nonlinear Semiparametric Models</i>, <b>Chernozhukov, Nekipelov, Semenova, Syrgkanis</b>, 2018
 
-Code assumes Python 3.6, but should also work with Python 2. It also requires basic python packages like, `numpy`, `scipy` and `scikit-learn`.
+Code requires Python 3.6. It also requires basic python packages like, `numpy`, `scipy` and `scikit-learn`.
 
 # Running the Monte Carlo Simulations
 
