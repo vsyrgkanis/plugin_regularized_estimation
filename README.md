@@ -1,6 +1,6 @@
 # Introduction
 
-Code associated with paper: <i>Plug-in Regularized Estimation of High-Dimensional Parameters in Nonlinear Semiparametric Models</i>, <b>Chernozhukov, Nekipelov, Semenova, Syrgkanis</b>, 2018
+Code associated with paper: <i>Regularized Orthogonal Estimation of High-Dimensional Parameters in Nonlinear Semiparametric Models</i>, <b> Nekipelov, Semenova, Syrgkanis</b>, 2018
 
 Code requires Python 3.6. It also requires basic python packages like, `numpy`, `scipy` and `scikit-learn`.
 
@@ -273,3 +273,4 @@ class LogisticWithOffsetAndGradientCorrection():
     def accuracy(self, X, y_true, offsets=None):
     ''' Prediction accuracy '''
 ```
+### Empirical application
